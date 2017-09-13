@@ -59,3 +59,4 @@ typings/
 
 output/
 package-lock.json
+output.json
