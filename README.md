@@ -31,4 +31,4 @@
 
 # 模板介绍
 
-模板文件用ES2015的模板字符串语法编写, 请参阅[文档](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals) 
+模板文件用ES2015的模板字符串语法编写, 请参阅[文档](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), 或项目里的模板文件示例 
