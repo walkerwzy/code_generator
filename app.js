@@ -138,8 +138,8 @@ function assumeVarType(str, isArray, model) {
     return [var_type, model_type];
 }
 
-function getPath(filename) {
-    // return path.join
+function getPath(...components) {
+    return path.join(__dirname, ...components);
 }
 
 async function parseTemplate(data) {
@@ -150,16 +150,17 @@ async function parseTemplate(data) {
         projectname = program.project,
         author      = program.author,
         // 模板内容
-        h_content   = await fs.readFile(path.join(__dirname, 'template.h'), 'utf8').catch(console.log),
-        m_content1  = await fs.readFile(path.join(__dirname, 'template.m'), 'utf8').catch(console.log),
-        m_content2  = await fs.readFile(path.join(__dirname, 'templatebase.m'), 'utf8').catch(console.log);
+        h_content   = await fs.readFile(getPath('template.h'), 'utf8').catch(console.log),
+        m_content1  = await fs.readFile(getPath('template.m'), 'utf8').catch(console.log),
+        m_content2  = await fs.readFile(getPath('templatebase.m'), 'utf8').catch(console.log);
     // 创建输出文件夹
-    // await fs.stat(
+    let out_folder = "output";
+    await fs.stat(out_folder).catch(async e=>await fs.mkdir(out_folder).catch(console.log));
     for(let model of data) {
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
-        let h_file = path.join(__dirname, 'output', model.className+'.h'),
-            m_file = path.join(__dirname, 'output', model.className+'.m');
+        let h_file = getPath(out_folder, model.className+'.h'),
+            m_file = getPath(out_folder, model.className+'.m');
         await fs.writeFile(h_file, eval(h_content), 'utf8').catch(console.log);
         await fs.writeFile(m_file, eval(m_content), 'utf8').catch(console.log);
     }
