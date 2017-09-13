@@ -60,3 +60,4 @@ typings/
 output/
 package-lock.json
 output.json
+.DS_Store
