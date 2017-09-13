@@ -20,8 +20,8 @@ program
     .option('-k, --datakeys [keys]', 'set data key names', collect, [])
     .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', batchCollect)
     .option('-b, --base [name]', 'set the base class names', collect, [])
-    .option('-c, --classes [name]', 'set the sub class names', collect, [])
-    .option('-C, --batchclasses <name,name,name>', 'batch set sub class names', batchCollect)
+    .option('-c, --classes [name]', 'set the class names', collect, [])
+    .option('-C, --batchclasses <name,name,name>', 'batch sub class names', batchCollect)
     .option('-p, --passkeys [key]', 'set exclued keys', collect, [])
     .option('-P, --batchpasskeys <key,key,key>', 'batch set exclued keys', batchCollect)
     .option('-a, --author [name]', 'set the author name', 'walker')
@@ -31,16 +31,16 @@ program
     .parse(process.argv);
 
 let baseClasses     = program.base.length || ['PMLResponseBaseHD', 'PMLModelBase'],
-    classCollect    = program.classes.length?program.classes : program.batchclasses||[],
-    dataKeys        = program.datakeys.length?program.datakeys : program.batchdatakeys||[],
-    passKeys        = program.passkeys.length?program.passkeys : program.batchpasskeys||[],
+    classCollect    = [...program.classes, ...program.batchclasses],
+    dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
+    passKeys        = [...program.passkeys, ...program.batchpasskeys],
     nameFactory     = classNameGenerator();
-dataKeys.push('data');      // 添加一个默认的 data 键, 要通用性的话, 这里不应该加
+
 (async () => {
 let content         = await readFile(program.file),
     $               = cheerio.load(content),
     contentJSON     = [];
-await $(".wiki-content>.table-wrap").each(async (i, table) => {
+$(".wiki-content>.table-wrap").each((i, table) => {
     if(i%2 == 0) return;
     processTable(table);
 }); 
@@ -60,13 +60,11 @@ function processTable(table, classMeta) {
     }else{
         modelName = nameFactory.next().value;
     }
-    let fileName_h = modelName + ".h",
-        fileName_m = modelName + ".m",
-        rowIsTable = false,
+    let rowIsTable = false,
         props = [],
         complexProperty; // 如果当前行表示是个对象或数据, 把元数据保存, 用来生成子表格对应的类
     $(table).children(".confluenceTable").children("tbody").children("tr")
-    .each(async (i,tr) => {
+    .each((i,tr) => {
         if(rowIsTable){
             // 进入这个方法,说明上一行标识这一行是子类
             rowIsTable = false;
@@ -74,9 +72,9 @@ function processTable(table, classMeta) {
         }
         let tds = $(tr).children('td');
         let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
-        if(!nameMatch) return; // 非英文则理解为不是属性名
-        if(passKeys.indexOf(nameMatch[0])>=0) return;           // 包含预设排除关键字, 不需要处理
-        let isComplexObj = dataKeys.indexOf(nameMatch[0])>=0;   // 包含预设子类关键字, 理解为复杂对象
+        if(!nameMatch) return;                                  // 第一格非英文则理解为不是属性名
+        if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
+        let isComplexObj = dataKeys.includes(nameMatch[0]);   // 包含预设子类关键字, 理解为复杂对象
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
         let ptype = tds.eq(2).text().trim();
@@ -90,7 +88,7 @@ function processTable(table, classMeta) {
             "isArray": isArray
         };
         if(tds.eq(3).text().trim()) {
-            prop["des"] = prop["des"] + " " + tds.eq(3).text();
+            prop["des"] = prop["des"] + " " + tds.eq(3).text().trim();
         }
         if(isComplexObj){
             prop["model"] = assume_type[1];
@@ -113,17 +111,7 @@ function* classNameGenerator() {
 async function readFile(filename) {
  let fullpath = path.join(__dirname, filename);
  console.log('start processing file:', fullpath);
- return await fs.readFile(fullpath, 'utf8')
- .catch(console.log);
-}
-
-async function createFile(filename) {
-    let fullpath = path.join(__dirname, filename),
-        stat = await fs.stat(fullpath).catch(e=>{
-            console.log('create file', fullpath);
-        });
-    await fs.writeFile(fullpath, 'hey there')
-    .catch(console.log);
+ return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
 /**
@@ -139,7 +127,7 @@ function assumeVarType(str, isArray, model) {
     let l_str = str.toLowerCase(), 
         model_type = str, // 类型 
         var_type = str;   // 字段
-    if(l_str.indexOf('string') >= 0) model_type = "NSString *";
+    if(l_str.includes('string')) model_type = "NSString *";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else {
         console.log("====undefined type: =====", str);
@@ -150,18 +138,23 @@ function assumeVarType(str, isArray, model) {
     return [var_type, model_type];
 }
 
+function getPath(filename) {
+    // return path.join
+}
+
 async function parseTemplate(data) {
     console.log("开始应用模板");
     // 暂时不支持别的语言, 为本项目使用(3个模板文件)
     // 以后要优化则要根据模板文件的个数有所个性化
     let copyright   = program.copyright,
         projectname = program.project,
-        date        = (new Date()).toLocaleDateString(),
         author      = program.author,
         // 模板内容
         h_content   = await fs.readFile(path.join(__dirname, 'template.h'), 'utf8').catch(console.log),
         m_content1  = await fs.readFile(path.join(__dirname, 'template.m'), 'utf8').catch(console.log),
         m_content2  = await fs.readFile(path.join(__dirname, 'templatebase.m'), 'utf8').catch(console.log);
+    // 创建输出文件夹
+    // await fs.stat(
     for(let model of data) {
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
