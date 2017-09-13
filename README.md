@@ -1,3 +1,9 @@
+# 演示
+
+1. node js请升级到最新版
+2. `npm install`
+3. `./run.sh` 或 `bash run.sh`
+
 # 基本使用
 
 ```
