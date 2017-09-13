@@ -24,6 +24,10 @@ program
     .option('-C, --batchclasses <name,name,name>', 'batch set sub class names', batchCollect)
     .option('-p, --passkeys [key]', 'set exclued keys', collect, [])
     .option('-P, --batchpasskeys <key,key,key>', 'batch set exclued keys', batchCollect)
+    .option('-a, --author [name]', 'set the author name', 'walker')
+    .option('-j, --project [name]', 'set the project name', 'Project')
+    .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
+    .option('-d, --debug [bool]', 'if true, the output.json file will gen', false)
     .parse(process.argv);
 
 let baseClasses     = program.base.length || ['PMLResponseBaseHD', 'PMLModelBase'],
@@ -40,7 +44,7 @@ await $(".wiki-content>.table-wrap").each(async (i, table) => {
     if(i%2 == 0) return;
     processTable(table);
 }); 
-await fs.writeJson('./output.json', contentJSON);  // for test
+if(program.debug) await fs.writeJson('./output.json', contentJSON);  // for test
 await parseTemplate(contentJSON);
 console.log("done!");
 
@@ -150,10 +154,10 @@ async function parseTemplate(data) {
     console.log("开始应用模板");
     // 暂时不支持别的语言, 为本项目使用(3个模板文件)
     // 以后要优化则要根据模板文件的个数有所个性化
-    let copyright   = "民康",
-        projectname = "项目名",
+    let copyright   = program.copyright,
+        projectname = program.project,
         date        = (new Date()).toLocaleDateString(),
-        author      = "walker",
+        author      = program.author,
         // 模板内容
         h_content   = await fs.readFile(path.join(__dirname, 'template.h'), 'utf8').catch(console.log),
         m_content1  = await fs.readFile(path.join(__dirname, 'template.m'), 'utf8').catch(console.log),
