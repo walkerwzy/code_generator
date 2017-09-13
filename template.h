@@ -2,8 +2,8 @@
 //  ${model.className}.h
 //  ${projectname}
 // 
-//  Created by ${author} on ${date}.
-//  Copyright © 2017 ${copyright}  All rights reserved.
+//  Created by ${author} on ${(new Date()).toLocaleDateString()}.
+//  Copyright © ${(new Date()).getFullYear()} ${copyright}  All rights reserved.
 // 
 
 #import <PMRESTLib/PMRESTLib.h>
