@@ -17,7 +17,7 @@ if(prop.type == 'NSInteger') return `
 /**
  * ${prop.des}
  */
-property (nonatomic, assign) ${prop.type}${prop.name};
+property (nonatomic, assign) ${prop.type} ${prop.name};
 `;
 else if(prop.type == 'NSString *') return `
 /**
