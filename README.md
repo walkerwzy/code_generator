@@ -2,7 +2,7 @@
 
 1. node js请升级到最新版
 2. `npm install`
-3. `./run.sh` 或 `bash run.sh`
+3. `./demo_run.sh` 或 `bash demo_run.sh`
 
 # 基本使用
 
@@ -18,7 +18,7 @@
 
 视参数多少自行使用, 
 
-或者将带参数命令写入`run.sh`文件并执行该文件
+或者复制`demo_run.sh`文件, 修改参数, 并执行该文件
 
 # 参数介绍
 
