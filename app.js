@@ -31,7 +31,7 @@ program
     .option('-d, --debug [bool]', 'if true, the output.json file will gen', false)
     .parse(process.argv);
 
-let baseClasses     = program.base.length || ['PMLResponseBaseHD', 'PMLModelBase'],
+let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
     classCollect    = [...program.classes, ...program.batchclasses],
     dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
