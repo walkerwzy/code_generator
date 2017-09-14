@@ -110,7 +110,7 @@ function* classNameGenerator() {
 }
 
 async function readFile(filename) {
- let fullpath = path.join(__dirname, filename);
+ let fullpath = path.resolve(filename); 
  console.log('start processing file:', fullpath);
  return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
