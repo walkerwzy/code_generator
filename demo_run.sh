@@ -3,7 +3,7 @@
     -K servicePkgItemDOList,servicePkgDOList \
     -P code,flag,message \
     -f demo_index.html \
-    -a wenbo \
+    -a walker \
     -j HomeDoctor \
     -d true
 
