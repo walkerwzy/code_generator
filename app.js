@@ -16,14 +16,14 @@ let batchCollect = function(val) {
 };
 program
     .version('0.0.1')
-    .option('-f, --file [type]', 'set input file name','index.html')
-    .option('-k, --datakeys [keys]', 'set data key names', collect, [])
+    .option('-f, --file <type>', 'set input file name','index.html')
+    .option('-k, --datakeys <keys>', 'set data key names', collect, [])
     .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', batchCollect)
     .option('-b, --base [name]', 'set the base class names', collect, [])
     .option('-c, --classes [name]', 'set the class names', collect, [])
-    .option('-C, --batchclasses <name,name,name>', 'batch sub class names', batchCollect)
+    .option('-C, --batchclasses [name,name,namel', 'batch sub class names', batchCollect)
     .option('-p, --passkeys [key]', 'set exclued keys', collect, [])
-    .option('-P, --batchpasskeys <key,key,key>', 'batch set exclued keys', batchCollect)
+    .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', batchCollect)
     .option('-a, --author [name]', 'set the author name', 'walker')
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
