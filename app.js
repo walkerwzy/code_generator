@@ -154,9 +154,8 @@ async function parseTemplate(data) {
         h_content   = await fs.readFile(getPath('template.h'), 'utf8').catch(console.log),
         m_content1  = await fs.readFile(getPath('template.m'), 'utf8').catch(console.log),
         m_content2  = await fs.readFile(getPath('templatebase.m'), 'utf8').catch(console.log);
-    // 创建输出文件夹
     let out_folder = "output";
-    await fs.stat(out_folder).catch(async e=>await fs.mkdir(out_folder).catch(console.log));
+    await fs.emptyDir(out_folder); // 创建/清空输出文件夹
     for(let model of data) {
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
