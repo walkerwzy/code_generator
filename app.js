@@ -19,12 +19,12 @@ program
     .usage('[option] <file ...>')
     .option('-f, --file <type>', 'set input file name','index.html')
     .option('-k, --datakeys <keys>', 'set data key names', collect, [])
-    .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', [])
+    .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', batchCollect, [])
     .option('-b, --base [name]', 'set the base class names', collect, [])
     .option('-c, --classes [name]', 'set the class names', collect, [])
-    .option('-C, --batchclasses [name,name,namel', 'batch sub class names', [])
+    .option('-C, --batchclasses [name,name,namel', 'batch sub class names', batchCollect, [])
     .option('-p, --passkeys [key]', 'set exclued keys', collect, [])
-    .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', [])
+    .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', batchCollect, [])
     .option('-a, --author [name]', 'set the author name', 'walker')
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
@@ -101,7 +101,7 @@ function processTable(table, classMeta) {
         contentJSON.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
         console.log("生成模型:", modelName) 
      }
-})();
+})().catch(console.log);
 
 
 // 类名生成器
