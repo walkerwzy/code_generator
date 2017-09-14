@@ -16,6 +16,7 @@ let batchCollect = function(val) {
 };
 program
     .version('0.0.1')
+    .usage('[option] <file ...>')
     .option('-f, --file <type>', 'set input file name','index.html')
     .option('-k, --datakeys <keys>', 'set data key names', collect, [])
     .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', batchCollect)
