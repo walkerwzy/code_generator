@@ -14,7 +14,7 @@
     return [NSDictionary mtl_identityPropertyMapWithModel:[self class]];
 }
 
-${model.props.filter(m=>m.model&&m.isArray).map(prop => 
+${model.props.filter(m=>m.isArray).map(prop => 
 `+ (NSValueTransformer *)${prop.name}JSONTransformer {
     return [MTLJSONAdapter arrayTransformerWithModelClass:[${prop.model} class]];
 }`).join()}

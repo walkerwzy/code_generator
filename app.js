@@ -69,7 +69,9 @@ function processTable(table, classMeta) {
         if(rowIsTable){
             // 进入这个方法,说明上一行标识这一行是子类
             rowIsTable = false;
-            return processTable($(tr).children("td").children(".table-wrap"), complexProperty);
+            // return processTable($(tr).children("td").children(".table-wrap"), complexProperty);
+            // 有时候文档把子表格写在了第二个 td 里...
+            return processTable($(tr).find(".table-wrap").eq(0), complexProperty);
         }
         let tds = $(tr).children('td');
         let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
@@ -80,6 +82,10 @@ function processTable(table, classMeta) {
         let pname = tds.eq(0).text().trim();
         let ptype = tds.eq(2).text().trim();
         let isArray = ptype.toLowerCase() == 'list';
+        // 有时关键字对应的不是一个类或数组
+        // 有时关键字对应的是数组, 但是是原生对象(尚未支持))
+        // 上述情况都不需要额外生成一个类
+        if(isPrimaryType(ptype)) isComplexObj = false;
         if(isComplexObj) ptype = nameFactory.next().value;
         let assume_type = assumeVarType(ptype, isArray, ptype);
         let prop = {
@@ -113,6 +119,12 @@ async function readFile(filename) {
  let fullpath = path.resolve(filename); 
  console.log('start processing file:', fullpath);
  return await fs.readFile(fullpath, 'utf8').catch(console.log);
+}
+
+// 是否基本类型
+function isPrimaryType(typestr) {
+    typestr = typestr.toLowerCase().trim();
+    return ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr);
 }
 
 /**
