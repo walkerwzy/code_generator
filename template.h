@@ -8,8 +8,8 @@
 
 #import <PMRESTLib/PMRESTLib.h>
 ${model.props.filter(m=>m.model).map(prop =>
-`#import ${prop.model}.h`
-).join('')}
+`#import ${prop.model}.h
+`).join('')}
 
 @interface ${model.className} : ${model.baseName}
 ${model.props.map(prop => {
@@ -30,6 +30,6 @@ return `
  * ${prop.des}
  */
 property (nonatomic, strong) ${prop.type}${prop.name};
-`}).join('')}
+`;}).join('')}
 
 @end`

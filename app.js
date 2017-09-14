@@ -29,6 +29,7 @@ program
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
     .option('-d, --debug [bool]', 'if true, the output.json file will gen', false)
+    .option('-V, --verbose [bool]', 'show logs', false)
     .parse(process.argv);
 
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
@@ -80,13 +81,15 @@ function processTable(table, classMeta) {
         let isComplexObj = dataKeys.includes(nameMatch[0]);   // 包含预设子类关键字, 理解为复杂对象
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
-        let ptype = tds.eq(2).text().trim();
-        let isArray = ptype.toLowerCase() == 'list';
+        let ptype = tds.eq(2).text().trim().toLowerCase();
+        let isArray = ptype == 'list';
         // 有时关键字对应的不是一个类或数组
         // 有时关键字对应的是数组, 但是是原生对象(尚未支持))
         // 上述情况都不需要额外生成一个类
-        if(isPrimaryType(ptype)) isComplexObj = false;
+        if(isComplexObj && isPrimaryType(ptype)) isComplexObj = false;
         if(isComplexObj) ptype = nameFactory.next().value;
+        // 经过处理后, pytyp出现为空, 或仍为list, 打印一下当前行看下问题
+        if(ptype == 'list' || ptype.length == 0) console.log($(tr).html(), tds.eq(2).text(), isPrimaryType(ptype), isComplexObj);
         let assume_type = assumeVarType(ptype, isArray, ptype);
         let prop = {
             "name": pname, 
@@ -105,7 +108,7 @@ function processTable(table, classMeta) {
         props.push(prop);
        }); // end of basetable > tr > foreach
         contentJSON.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
-        console.log("生成模型:", modelName) 
+        if(program.verbose) console.log("生成模型:", modelName) 
      }
 })().catch(console.log);
 
@@ -140,10 +143,12 @@ function assumeVarType(str, isArray, model) {
     let l_str = str.toLowerCase(), 
         model_type = str, // 类型 
         var_type = str;   // 字段
-    if(l_str.includes('string')) model_type = "NSString *";
+    // if(l_str.includes('string')) model_type = "NSString *";
+    // 暂时把bool也算作字符串
+    if(['bool', 'boolean', 'string'].includes(l_str)) model_type = "NSString *";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else {
-        console.log("====undefined type: =====", str);
+        console.log("====user defined type: =====", str);
         model_type = model + " *";
     }
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
