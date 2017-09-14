@@ -29,7 +29,7 @@ program
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
     .option('-d, --debug [bool]', 'if true, the output.json file will gen', false)
-    .option('-V, --verbose [bool]', 'show logs', false)
+    .option('-o, --verbose [bool]', 'show logs', false)
     .parse(process.argv);
 
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
