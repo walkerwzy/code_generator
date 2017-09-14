@@ -59,5 +59,6 @@ typings/
 
 output/
 package-lock.json
+index.html
 output.json
 .DS_Store
