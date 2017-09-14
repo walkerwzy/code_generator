@@ -12,6 +12,6 @@ modelServicePkgDetailInfo,modelServicePkgDetailContent \
     -f /Users/walker/Desktop/index.html \
     -a walker \
     -j HomeDoctor \
-    -V true
+    -o true \
     -d true
 
