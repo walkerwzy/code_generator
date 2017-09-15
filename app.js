@@ -29,6 +29,7 @@ program
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
     .option('-d, --debug [bool]', 'if true, the output.json file will gen', false)
+    .option('--verbose [bool]', 'show logs', false)
     .parse(process.argv);
 
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
@@ -36,7 +37,7 @@ let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLMode
     dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
     nameFactory     = classNameGenerator();
-
+    
 (async () => {
 let content         = await readFile(program.file),
     $               = cheerio.load(content),
@@ -69,18 +70,28 @@ function processTable(table, classMeta) {
         if(rowIsTable){
             // 进入这个方法,说明上一行标识这一行是子类
             rowIsTable = false;
-            return processTable($(tr).children("td").children(".table-wrap"), complexProperty);
+            // return processTable($(tr).children("td").children(".table-wrap"), complexProperty);
+            // 有时候文档把子表格写在了第二个 td 里...
+            return processTable($(tr).find(".table-wrap").eq(0), complexProperty);
         }
         let tds = $(tr).children('td');
         let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
-        if(!nameMatch) return;                                  // 第一格非英文则理解为不是属性名
+        if(!nameMatch) return;                                // 第一格非英文则理解为不是属性名
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
         let isComplexObj = dataKeys.includes(nameMatch[0]);   // 包含预设子类关键字, 理解为复杂对象
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
-        let ptype = tds.eq(2).text().trim();
+        let ptype = tds.eq(2).text().trim() || "object";      // 没有足够的列, 说明下一行是一个对象, 被人省了, 如果是数组会标明是 list 的
+        let pdes  = tds.eq(3).text().trim() || "";
+        if(!ptype || ptype.length == 0) console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
         let isArray = ptype.toLowerCase() == 'list';
+        // 有时关键字对应的不是一个类或数组
+        // 有时关键字对应的是数组, 但是是原生对象(尚未支持))
+        // 上述情况都不需要额外生成一个类
+        if(isComplexObj && isPrimaryType(ptype)) isComplexObj = false;
         if(isComplexObj) ptype = nameFactory.next().value;
+        if(!ptype || ptype.length == 0) console.log("类名个数不符");
+        if(ptype == 'list') console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isPrimaryType(ptype), isComplexObj)
         let assume_type = assumeVarType(ptype, isArray, ptype);
         let prop = {
             "name": pname, 
@@ -88,8 +99,8 @@ function processTable(table, classMeta) {
             "type": assume_type[0],
             "isArray": isArray
         };
-        if(tds.eq(3).text().trim()) {
-            prop["des"] = prop["des"] + " " + tds.eq(3).text().trim();
+        if(pdes) {
+            prop["des"] = prop["des"] + " " + pdes;
         }
         if(isComplexObj){
             prop["model"] = assume_type[1];
@@ -99,7 +110,7 @@ function processTable(table, classMeta) {
         props.push(prop);
        }); // end of basetable > tr > foreach
         contentJSON.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
-        console.log("生成模型:", modelName) 
+        if(program.verbose) console.log("生成模型:", modelName) 
      }
 })().catch(console.log);
 
@@ -115,6 +126,12 @@ async function readFile(filename) {
  return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
+// 是否基本类型
+function isPrimaryType(typestr) {
+    typestr = typestr.toLowerCase().trim();
+    return ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr);
+}
+
 /**
  * 根据关键字推断类型
  * @prarm str: 关键字
@@ -128,10 +145,12 @@ function assumeVarType(str, isArray, model) {
     let l_str = str.toLowerCase(), 
         model_type = str, // 类型 
         var_type = str;   // 字段
-    if(l_str.includes('string')) model_type = "NSString *";
+    // if(l_str.includes('string')) model_type = "NSString *";
+    // 暂时把bool也算作字符串
+    if(['bool', 'boolean', 'string'].includes(l_str)) model_type = "NSString *";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else {
-        console.log("====undefined type: =====", str);
+        console.log("====user defined type: =====", str);
         model_type = model + " *";
     }
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
@@ -154,9 +173,10 @@ async function parseTemplate(data) {
         h_content   = await fs.readFile(getPath('template.h'), 'utf8').catch(console.log),
         m_content1  = await fs.readFile(getPath('template.m'), 'utf8').catch(console.log),
         m_content2  = await fs.readFile(getPath('templatebase.m'), 'utf8').catch(console.log);
-    let out_folder = "scripts/output";
+    let out_folder = "output";
     await fs.emptyDir(out_folder); // 创建/清空输出文件夹
     for(let model of data) {
+        if(classCollect.filter(m=>m==model).length>1) return; // 不生成重复文件
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
         let h_file = getPath(out_folder, model.className+'.h'),
