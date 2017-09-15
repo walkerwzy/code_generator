@@ -64,3 +64,5 @@ output.json
 .DS_Store
 run.sh
 my.sh
+scripts/
+models/

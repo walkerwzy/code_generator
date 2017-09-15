@@ -14,6 +14,5 @@
     "commander": "^2.11.0",
     "fs-extra": "^4.0.1"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
