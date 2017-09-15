@@ -4,6 +4,8 @@ let fs = require('fs-extra'),
     path = require('path'),
     program = require('commander'),
     cheerio = require('cheerio'),
+    strlist = 'list<string>',
+    intlist = 'list<int>',
     $;
 
 // 命令行参数
@@ -37,7 +39,7 @@ let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLMode
     classCollect    = [...program.classes, ...program.batchclasses],
     dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
-    nameFactory     = classNameGenerator();
+    typeFactory     = classNameGenerator();
 
 (async () => {
 let content         = await readFile(program.file),
@@ -47,7 +49,7 @@ $(".wiki-content>.table-wrap").each((i, table) => {
     if(i%2 == 0) return;
     processTable(table);
 }); 
-if(program.debug) await fs.writeJson('./output.json', contentJSON);  // for test
+if(program.debug) await fs.writeJson('./output.json', contentJSON); 
 await parseTemplate(contentJSON);
 console.log("done!");
 
@@ -61,7 +63,7 @@ function processTable(table, classMeta) {
         baseName    = baseClasses[1];
         isRoot      = false;
     }else{
-        modelName = nameFactory.next().value;
+        modelName = typeFactory.next().value;
     }
     let rowIsTable = false,
         props = [],
@@ -82,15 +84,19 @@ function processTable(table, classMeta) {
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
-        let ptype = tds.eq(2).text().trim() || "object";      // 没有足够的列, 说明下一行是一个对象, 被人省了, 如果是数组会标明是 list 的
+        let ptype = tds.eq(2).text().trim() || "object";      // 没有足够的列, 说明下一行是一个对象, 被合并单元格了, 如果是数组会标明是 list 的
         let pdes  = tds.eq(3).text().trim() || "";
-        if(!ptype || ptype.length == 0) return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
+        if(!ptype || ptype.length == 0) 
+            return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
         let isArray = ptype.toLowerCase() == 'list';
-        if(isComplexObj) ptype = nameFactory.next().value;
-        if(ptype == "object") return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
-        if(!ptype || ptype.length == 0) return console.log("类名个数不符");  // 生成器没生成类名, 说明数量给少了
-        if(ptype == 'list') console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isPrimaryType(ptype), isComplexObj)
+        if(isComplexObj) ptype = typeFactory.next().value;
+        if(ptype == "object") 
+            return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
+        if(!ptype || ptype.length == 0) 
+            return console.log("类名个数不符");  // 生成器没生成类名, 说明数量给少了
+        if(ptype == 'list') 
+            return console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isComplexObj)
         let assume_type = assumeVarType(ptype, isArray, ptype);
         let prop = {
             "name": pname, 
@@ -125,12 +131,12 @@ async function readFile(filename) {
  return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
-// 是否基本类型
+// 是否对象或数组(简单数组不算)
 function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
     let isUserDefined = dataKeys.includes(keystr),
         isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr),
-        isPrimaryList = ['list<int>', 'list<string>'].includes(typestr);
+        isPrimaryList = [intlist, strlist].includes(typestr);
     return isUserDefined && !isPrimaryType && !isPrimaryList; 
         
 }
@@ -152,8 +158,8 @@ function assumeVarType(str, isArray, model) {
     // 暂时把bool也算作字符串
     if(['bool', 'boolean', 'string'].includes(l_str)) model_type = "NSString *";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
-    else if(l_str == 'list<string>') model_type = "NSArray<NSString *> *"
-    else if(l_str == 'list<int>') model_type = "NSArray<NSInteger> *";
+    else if(l_str == strlist) model_type = "NSArray<NSString *> *"
+    else if(l_str == intlist) model_type = "NSArray<NSInteger> *";
     else {
         console.log("====user defined type: =====", str);
         model_type = model + " *";
@@ -169,8 +175,7 @@ function getPath(...components) {
 
 async function parseTemplate(data) {
     console.log("开始应用模板");
-    // 暂时不支持别的语言, 为本项目使用(3个模板文件)
-    // 以后要优化则要根据模板文件的个数有所个性化
+    // 以后有我套模板生成的时候, 就用参数传入
     let copyright   = program.copyright,
         projectname = program.project,
         author      = program.author,
@@ -179,7 +184,7 @@ async function parseTemplate(data) {
         m_content1  = await fs.readFile(getPath('template.m'), 'utf8').catch(console.log),
         m_content2  = await fs.readFile(getPath('templatebase.m'), 'utf8').catch(console.log);
     let out_folder = "output";
-    let exist_file = []; // 重复定义的类, 只生成一次, 生成一次就丢到这个数组里打标
+    let exist_file = []; // 重复定义的类, 只生成一次, 生成过一次就丢到这个数组里打标
     await fs.emptyDir(out_folder); // 创建/清空输出文件夹
     for(let model of data) {
         if(classCollect.filter(m=>m==model).length>1) {
