@@ -3,6 +3,8 @@ author='walker'
 projectname='Homedoctor'
 passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
+debug=true
+verbose=false
 models=(
 #获取扫码后待操作的订单
 'modelPendingOrderListResponse'
@@ -50,8 +52,6 @@ datakeys=(
 'servicePkgItemDOList'
 'imgUrls'
 )
-debug=true
-verbose=false
 
 for name in ${models[@]}; do
 	types=${types}${name},
