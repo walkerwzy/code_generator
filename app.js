@@ -152,7 +152,8 @@ function assumeVarType(str, isArray, model) {
     // 暂时把bool也算作字符串
     if(['bool', 'boolean', 'string'].includes(l_str)) model_type = "NSString *";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
-    else if(['list<int>', 'list<string>'].includes(l_str)) model_type = "NSArray *";
+    else if(l_str == 'list<string>') model_type = "NSArray<NSString *> *"
+    else if(l_str == 'list<int>') model_type = "NSArray<NSInteger> *";
     else {
         console.log("====user defined type: =====", str);
         model_type = model + " *";
