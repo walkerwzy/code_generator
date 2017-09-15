@@ -12,6 +12,7 @@ let collect = function(val, col) {
     return col;
 };
 let batchCollect = function(val) {
+    val = val.replace(/\,+/ig, ',');
     return val.split(',');
 };
 program
@@ -79,19 +80,16 @@ function processTable(table, classMeta) {
         let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
         if(!nameMatch) return;                                // 第一格非英文则理解为不是属性名
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
-        let isComplexObj = dataKeys.includes(nameMatch[0]);   // 包含预设子类关键字, 理解为复杂对象
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
         let ptype = tds.eq(2).text().trim() || "object";      // 没有足够的列, 说明下一行是一个对象, 被人省了, 如果是数组会标明是 list 的
         let pdes  = tds.eq(3).text().trim() || "";
-        if(!ptype || ptype.length == 0) console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
+        if(!ptype || ptype.length == 0) return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
+        let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
         let isArray = ptype.toLowerCase() == 'list';
-        // 有时关键字对应的不是一个类或数组
-        // 有时关键字对应的是数组, 但是是原生对象(尚未支持))
-        // 上述情况都不需要额外生成一个类
-        if(isComplexObj && isPrimaryType(ptype)) isComplexObj = false;
         if(isComplexObj) ptype = nameFactory.next().value;
-        if(!ptype || ptype.length == 0) console.log("类名个数不符");
+        if(ptype == "object") return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
+        if(!ptype || ptype.length == 0) return console.log("类名个数不符");  // 生成器没生成类名, 说明数量给少了
         if(ptype == 'list') console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isPrimaryType(ptype), isComplexObj)
         let assume_type = assumeVarType(ptype, isArray, ptype);
         let prop = {
@@ -128,9 +126,13 @@ async function readFile(filename) {
 }
 
 // 是否基本类型
-function isPrimaryType(typestr) {
+function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
-    return ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr);
+    let isUserDefined = dataKeys.includes(keystr),
+        isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr),
+        isPrimaryList = ['list<int>', 'list<string>'].includes(typestr);
+    return isUserDefined && !isPrimaryType && !isPrimaryList; 
+        
 }
 
 /**
@@ -150,6 +152,7 @@ function assumeVarType(str, isArray, model) {
     // 暂时把bool也算作字符串
     if(['bool', 'boolean', 'string'].includes(l_str)) model_type = "NSString *";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
+    else if(['list<int>', 'list<string>'].includes(l_str)) model_type = "NSArray *";
     else {
         console.log("====user defined type: =====", str);
         model_type = model + " *";
