@@ -2,27 +2,27 @@
 
 # models
 models=(
-#isbind
+#是否存在绑定关系
 'modelIsQianYueResponse'
-#bindagree
+#绑定签约关系
 'modelBindPatientResponse'
-#agreementtype
+#查询用户签约信息类别
 'modelAgreementTypeResponse,modelAgreementType'
-#agreeuser
+#查询签约信息（个人签约）
 'modelUserAgreementResponse,modelUserAgreementInfo'
-#agreegroup
+#查询签约信息（团队签约）
 'modelGroupBindResponse,modelGroupBindInfo,modelBindGroupRole,modelBindGroupDoctor'
-#modify
+#修改用户默认签约关系
 'modelModifyBindResponse'
-#useragreementlist
+#查询居民签约信息列表
 'modelUserBindListResponse,modelUBAgreementInfo'
-#agreement
+#查询签约详情
 'modelAgreementDetailResponse,modelAgreementdetailInfo,modelAgreementServicePksInfo,modelAgreementTagInfo,modelAgreementAttatch'
-#thirdpart
+#查询签约详情（第三方，非登陆）
 'modelThirdQueryBindDetailResponse,modelAgreementdetailInfo,modelAgreementServicePksInfo,modelAgreementTagInfo,modelAgreementAttatch'
-#pkglist
+#签约套餐列表信息
 'modelServicePkgsListResponse,modelServicePkgsListItem'
-#pkddetail
+#签约服务包详情
 'modelServicePkgDetailResponse,modelServicePkgDetailInfo,modelServicePkgDetailContent'
 )
 for name in ${models[@]}
