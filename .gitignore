@@ -59,10 +59,7 @@ typings/
 
 output/
 package-lock.json
-index.html
 output.json
 .DS_Store
-run.sh
-my.sh
 scripts
 models/

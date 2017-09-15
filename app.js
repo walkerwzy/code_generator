@@ -28,8 +28,8 @@ program
     .option('-a, --author [name]', 'set the author name', 'walker')
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
-    .option('-d, --debug [bool]', 'if true, the output.json file will gen', false)
-    .option('--verbose [bool]', 'show logs', false)
+    .option('--debug', 'the output.json file will gen', false)
+    .option('--verbose', 'show buzz logs', false)
     .parse(process.argv);
 
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
@@ -37,7 +37,7 @@ let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLMode
     dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
     nameFactory     = classNameGenerator();
-    
+
 (async () => {
 let content         = await readFile(program.file),
     $               = cheerio.load(content),
@@ -67,6 +67,7 @@ function processTable(table, classMeta) {
         complexProperty; // 如果当前行表示是个对象或数据, 把元数据保存, 用来生成子表格对应的类
     $(table).children(".confluenceTable").children("tbody").children("tr")
     .each((i,tr) => {
+        if($(tr).text().trim().length == 0) return; // 空行不处理
         if(rowIsTable){
             // 进入这个方法,说明上一行标识这一行是子类
             rowIsTable = false;
@@ -174,9 +175,13 @@ async function parseTemplate(data) {
         m_content1  = await fs.readFile(getPath('template.m'), 'utf8').catch(console.log),
         m_content2  = await fs.readFile(getPath('templatebase.m'), 'utf8').catch(console.log);
     let out_folder = "output";
+    let exist_file = []; // 重复定义的类, 只生成一次, 生成一次就丢到这个数组里打标
     await fs.emptyDir(out_folder); // 创建/清空输出文件夹
     for(let model of data) {
-        if(classCollect.filter(m=>m==model).length>1) return; // 不生成重复文件
+        if(classCollect.filter(m=>m==model).length>1) {
+            if(exist_file.includes(model)) return;
+            exist_file.push(model);
+        }
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
         let h_file = getPath(out_folder, model.className+'.h'),
