@@ -27,17 +27,18 @@ datakeys=(
 'groupRoleList'
 )
 
-for name in ${models[@]}; do
-	types=${types}${name},
-done;
-types=${types}cEOF
-#如果 types 比较简单, 请直接覆盖types变量
+for model in ${models[@]}; do
+	desp=${desp}${model%%:*},
+	types=${types}${model#*:},
+done
+types=${types}
+desp=${desp}
 
 for key in ${datakeys[@]}; do
 	keys=${keys}${key},
 done
-keys=${keys}kEOF
-#如果 datakey 比较简单, 请直接覆盖keys变量
+keys=${keys}
+# 如果 datakey 比较简单, 请直接覆盖keys变量
 
 if [ "$debug" = true ] ; then
 	enableDebug='--debug'
@@ -49,8 +50,10 @@ fi
 
 ./app.js ${enableVerbose} ${enableDebug} \
     -C ${types} \
+    -D ${desp} \
 	-K ${keys} \
     -P ${passkeys} \
     -f ${fileuri} \
     -a ${author} \
+    -m ${modulename} \
     -j ${projectname}

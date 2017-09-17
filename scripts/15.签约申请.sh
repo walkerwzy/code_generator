@@ -27,12 +27,6 @@ done
 types=${types}
 desp=${desp}
 
-# for name in ${models[@]}; do
-# 	types=${types}${name},
-# done;
-# types=${types}
-#如果 types 比较简单, 请直接覆盖types变量
-
 for key in ${datakeys[@]}; do
 	keys=${keys}${key},
 done
