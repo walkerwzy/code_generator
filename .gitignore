@@ -62,3 +62,4 @@ package-lock.json
 output.json
 .DS_Store
 models/
+output_*

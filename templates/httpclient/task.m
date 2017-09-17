@@ -16,7 +16,7 @@ PMTASK_INIT_SINGLETON
 
 + (NSDictionary<NSString *,id> *)modelClassesByResourcePath {
     return @{${endpoints.map(e=>`
-				kEndpoint${e.path}:		[${e.model} class],`).join('').slice(0,-1)}
+				kEndpoint${e.method}:		[${e.model} class],`).join('').slice(0,-1)}
              };
 }
 
