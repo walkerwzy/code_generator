@@ -235,12 +235,11 @@ async function parseTemplate(filejson, filetext) {
     if(program.verbose) console.log("开始生成请求类");
     let h_file      = getPath(out_task, `${modulename}.h`),
         m_file      = getPath(out_task, `${modulename}.m`),
-        endpoints    = filetext.match(/(\/.*?\.json)/ig);
+        endpoints    = filetext.match(/(\/.*?\.json)/ig);  // 从文档中提取接口地址
     if(rootclasses.length!=typeDes.length)
         return console.log("接口描述数量与接口返回值数量不一致", typeDes, rootclasses);
     if(rootclasses.length!=endpoints.length)
         return console.log("接口数量与接口返回值数量不一致", endpoints, rootclasses);
-    // 把接口名称(从接口地址变形), 接口地址(endpoints)和响应类型(rootclasses)拼接起来
     endpoints = endpoints.map((e,i)=>{
         return {
         "path": e,
