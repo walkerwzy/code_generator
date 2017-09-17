@@ -14,18 +14,22 @@ let collect = function(val, col) {
     return col;
 };
 let batchCollect = function(val) {
-    val = val.replace(/\,+/ig, ',');
+    val = val.replace(/\,+/ig, ',').replace(/,$/g,'');
     return val.split(',');
 };
+
 program
     .version('0.0.1')
     .usage('[option] <file ...>')
     .option('-f, --file <type>', 'set input file name','index.html')
+    .option('-m, --module [name]', 'set the module name')
     .option('-k, --datakeys <keys>', 'set data key names', collect, [])
     .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', batchCollect, [])
     .option('-b, --base [name]', 'set the base class names', collect, [])
     .option('-c, --classes [name]', 'set the class names', collect, [])
-    .option('-C, --batchclasses [name,name,namel', 'batch sub class names', batchCollect, [])
+    .option('-C, --batchclasses [name,name,name]', 'batch sub class names', batchCollect, [])
+    .option('-d, --des [name]', 'set each root model a description', collect, [])
+    .option('-D, --batchdes [name]', 'set each root model a description', batchCollect, [])
     .option('-p, --passkeys [key]', 'set exclued keys', collect, [])
     .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', batchCollect, [])
     .option('-a, --author [name]', 'set the author name', 'walker')
@@ -34,11 +38,11 @@ program
     .option('--debug', 'the output.json file will gen', false)
     .option('--verbose', 'show buzz logs', false)
     .parse(process.argv);
-
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
     classCollect    = [...program.classes, ...program.batchclasses],
     dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
+    typeDes         = [...program.des, ...program.batchdes],
     typeFactory     = classNameGenerator();
 
 (async () => {
@@ -48,10 +52,11 @@ let content         = await readFile(program.file),
 $(".wiki-content>.table-wrap").each((i, table) => {
     if(i%2 == 0) return;
     processTable(table);
-}); 
-if(program.debug) await fs.writeJson('./output.json', contentJSON); 
-await parseTemplate(contentJSON);
-console.log("done!");
+});  
+if(program.debug) await fs.writeJson('./output.json', contentJSON);
+await parseTemplate(contentJSON, $('.wiki-content p').text());
+// 解析文本中的
+if(program.verbose) console.log("done!");
 
 function processTable(table, classMeta) {
     let modelName   = "",
@@ -127,7 +132,7 @@ function* classNameGenerator() {
 
 async function readFile(filename) {
  let fullpath = path.resolve(filename); 
- console.log('start processing file:', fullpath);
+ if(program.verbose) console.log('start processing file:', fullpath);
  return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
@@ -173,29 +178,78 @@ function getPath(...components) {
     return path.join(__dirname, ...components);
 }
 
-async function parseTemplate(data) {
-    console.log("开始应用模板");
-    // 以后有我套模板生成的时候, 就用参数传入
+function underscoreToCamel(all, letter, index, text) {
+    // 第一个参数是当次匹配到的全文
+    // 第二个参数是当次匹配到第一组, 以此类推
+    // 只要参数数量足够, 最后两个就是第一个匹配的索引和原始文本
+    return letter.toUpperCase();
+}
+
+async function getFileContent(...components) {
+    let fullpath = getPath(...components);
+    return await fs.readFile(fullpath, 'utf8').catch(console.log);
+}
+
+async function genFileFromTemplate(filepath, tpl) {
+    return await fs.writeFile(filepath, tpl, 'utf8').catch(console.log);
+}
+
+async function parseTemplate(filejson, filetext) {
+    if(program.verbose) console.log("开始应用模板");
+    // 以后有多套模板生成的时候, 就用参数传入
     let copyright   = program.copyright,
         projectname = program.project,
         author      = program.author,
+        modulename  = program.module,
+        model_path  = "templates/model",
+        task_path   = "templates/httpclient",
         // 模板内容
-        h_content   = await fs.readFile(getPath('template.h'), 'utf8').catch(console.log),
-        m_content1  = await fs.readFile(getPath('template.m'), 'utf8').catch(console.log),
-        m_content2  = await fs.readFile(getPath('templatebase.m'), 'utf8').catch(console.log);
-    let out_folder = "output";
-    let exist_file = []; // 重复定义的类, 只生成一次, 生成过一次就丢到这个数组里打标
-    await fs.emptyDir(out_folder); // 创建/清空输出文件夹
-    for(let model of data) {
+        h_content   = await getFileContent(model_path, 'template.h'),
+        m_content1  = await getFileContent(model_path, 'template.m'),
+        m_content2  = await getFileContent(model_path, 'templatebase.m'),
+        h_task      = await getFileContent(task_path, 'task.h'),
+        m_task      = await getFileContent(task_path, 'task.m');
+    let out_model   = "output_model",
+        out_task    = "output_task",
+        exist_file  = []; // 重复定义的类, 只生成一次, 生成过一次就丢到这个数组里打标
+        rootclasses = []; // 每个表格对应一个root class
+    await fs.emptyDir(out_model); // 创建/清空输出文件夹
+    await fs.emptyDir(out_task); // 创建/清空输出文件夹
+    if(program.verbose) console.log("开始生成实体类")
+    for(let model of filejson) {
         if(classCollect.filter(m=>m==model).length>1) {
             if(exist_file.includes(model)) return;
             exist_file.push(model);
         }
+        if(model.isRoot) rootclasses.push(model.className);
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
-        let h_file = getPath(out_folder, model.className+'.h'),
-            m_file = getPath(out_folder, model.className+'.m');
-        await fs.writeFile(h_file, eval(h_content), 'utf8').catch(console.log);
-        await fs.writeFile(m_file, eval(m_content), 'utf8').catch(console.log);
+        let h_file = getPath(out_model, model.className+'.h'),
+            m_file = getPath(out_model, model.className+'.m');
+        await genFileFromTemplate(h_file, eval(h_content));
+        await genFileFromTemplate(m_file, eval(m_content));
     }
+    // ===================
+    // gen http request (task) file
+    // ===================
+    if(program.verbose) console.log("开始生成请求类");
+    let h_file      = getPath(out_task, `${modulename}.h`),
+        m_file      = getPath(out_task, `${modulename}.m`),
+        endpoints    = filetext.match(/(\/.*?\.json)/ig);
+    if(rootclasses.length!=typeDes.length)
+        return console.log("接口描述数量与接口返回值数量不一致", typeDes, rootclasses);
+    if(rootclasses.length!=endpoints.length)
+        return console.log("接口数量与接口返回值数量不一致", endpoints, rootclasses);
+    // 把接口名称(从接口地址变形), 接口地址(endpoints)和响应类型(rootclasses)拼接起来
+    endpoints = endpoints.map((e,i)=>{
+        return {
+        "path": e,
+        "method": 'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json',''),
+        "model": rootclasses[i],
+        "des": typeDes[i]
+    }
+    });
+    await genFileFromTemplate(h_file, eval(h_task));
+    await genFileFromTemplate(m_file, eval(m_task));
+    console.log(`all done. model path [${out_model}], task path [${out_task}]`)
 }

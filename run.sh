@@ -2,7 +2,7 @@
 author='walker'
 projectname='Homedoctor'
 passkeys='code,flag,message'
-fileuri='/Users/walker/Desktop/index.html'
+fileuri='index.html'
 debug=true
 verbose=false
 models=(
