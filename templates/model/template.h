@@ -25,6 +25,12 @@ else if(prop.type == 'NSString *') return `
  */
 @property (nonatomic, copy) ${prop.type}${prop.name};
 `;
+else if(prop.type == 'BOOL') return `
+/**
+ * ${prop.des}
+ */
+@property (nonatomic, assign) ${prop.type} ${prop.name};
+`;
 return `
 /**
  * ${prop.des}

@@ -159,9 +159,8 @@ function assumeVarType(str, isArray, model) {
     let l_str = str.toLowerCase(), 
         model_type = str, // 类型 
         var_type = str;   // 字段
-    // if(l_str.includes('string')) model_type = "NSString *";
-    // 暂时把bool也算作字符串
-    if(['bool', 'boolean', 'string'].includes(l_str)) model_type = "NSString *";
+    if(l_str.includes('string')) model_type = "NSString *";
+    else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSInteger> *";
