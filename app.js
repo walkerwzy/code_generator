@@ -48,17 +48,17 @@ let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLMode
 (async () => {
 let content         = await readFile(program.file),
     $               = cheerio.load(content),
-    contentJSON     = [];
+    responseJSON     = [],
+    argsJSON        = [];
 $(".wiki-content>.table-wrap").each((i, table) => {
-    if(i%2 == 0) return;
-    processTable(table);
+    if(i%2 == 0) return parseRequestTable(table);
+    parseResponseTable(table);
 });  
-if(program.debug) await fs.writeJson('./output.json', contentJSON);
-await parseTemplate(contentJSON, $('.wiki-content p').text());
-// 解析文本中的
+if(program.debug) await fs.writeJson('./output.json', responseJSON).catch(console.log);
+await parseTemplate(responseJSON, $('.wiki-content p').text(), argsJSON).catch(console.log);
 if(program.verbose) console.log("done!");
 
-function processTable(table, classMeta) {
+function parseResponseTable(table, classMeta) {
     let modelName   = "",
         baseName    = baseClasses[0],
         isRoot      = true;     // 子类如果需要继承不同的基类, 则利用此标识
@@ -79,9 +79,9 @@ function processTable(table, classMeta) {
         if(rowIsTable){
             // 进入这个方法,说明上一行标识这一行是子类
             rowIsTable = false;
-            // return processTable($(tr).children("td").children(".table-wrap"), complexProperty);
+            // return parseResponseTable($(tr).children("td").children(".table-wrap"), complexProperty);
             // 有时候文档把子表格写在了第二个 td 里...
-            return processTable($(tr).find(".table-wrap").eq(0), complexProperty);
+            return parseResponseTable($(tr).find(".table-wrap").eq(0), complexProperty);
         }
         let tds = $(tr).children('td');
         let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
@@ -119,9 +119,21 @@ function processTable(table, classMeta) {
         }
         props.push(prop);
        }); // end of basetable > tr > foreach
-        contentJSON.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
+        responseJSON.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
         if(program.verbose) console.log("生成模型:", modelName) 
      }
+function parseRequestTable(table) {
+    let param_des = [];
+    $(table).children(".confluenceTable").children("tbody").children("tr")
+    .each((i, tr) => {
+        if(i<2) return;
+        let tds     = Array.from($(tr).children('td'));
+        if($(tds[0]).text() == '业务参数') return;
+        let propdes = tds.map(t=>$(t).text()).join(' ');
+        param_des.push(propdes);
+    });
+    argsJSON.push(param_des);
+}
 })().catch(console.log);
 
 
@@ -165,7 +177,7 @@ function assumeVarType(str, isArray, model) {
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSInteger> *";
     else {
-        console.log("====user defined type: =====", str);
+        if(program.verbose) console.log("====user defined type: =====", str);
         model_type = model + " *";
     }
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
@@ -193,9 +205,9 @@ async function genFileFromTemplate(filepath, tpl) {
     return await fs.writeFile(filepath, tpl, 'utf8').catch(console.log);
 }
 
-async function parseTemplate(filejson, filetext) {
+// 参数: 模型, 文本, 入参描述
+async function parseTemplate(filejson, filetext, argdes) {
     if(program.verbose) console.log("开始应用模板");
-    // 以后有多套模板生成的时候, 就用参数传入
     let copyright   = program.copyright,
         projectname = program.project,
         author      = program.author,
@@ -215,8 +227,8 @@ async function parseTemplate(filejson, filetext) {
     await fs.emptyDir(out_model); // 创建/清空输出文件夹
     await fs.emptyDir(out_task); // 创建/清空输出文件夹
     if(program.verbose) console.log("开始生成实体类")
-    for(let model of filejson) {
-        if(classCollect.filter(m=>m==model).length>1) {
+    filejson.forEach(async (model, index) => {
+        if(classCollect.filter(m=>m==model.className).length>1) {
             if(exist_file.includes(model)) return;
             exist_file.push(model);
         }
@@ -225,9 +237,9 @@ async function parseTemplate(filejson, filetext) {
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
             m_file = getPath(out_model, model.className+'.m');
-        await genFileFromTemplate(h_file, eval(h_content));
-        await genFileFromTemplate(m_file, eval(m_content));
-    }
+        await genFileFromTemplate(h_file, eval(h_content)).catch(console.log);
+        await genFileFromTemplate(m_file, eval(m_content)).catch(console.log);
+    });
     // ===================
     // gen http request (task) file
     // ===================
@@ -235,6 +247,8 @@ async function parseTemplate(filejson, filetext) {
     let h_file      = getPath(out_task, `${modulename}.h`),
         m_file      = getPath(out_task, `${modulename}.m`),
         endpoints    = filetext.match(/(\/.*?\.json)/ig);  // 从文档中提取接口地址
+    if(argdes.length!=endpoints.length)
+        return console.log("接口数量与入参数量不一致的", endpoints, argdes);
     if(rootclasses.length!=typeDes.length)
         return console.log("接口描述数量与接口返回值数量不一致", typeDes, rootclasses);
     if(rootclasses.length!=endpoints.length)

@@ -5,9 +5,10 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
+modulename=taskAgreementApply
 models=(
 '获取配置信息:modelAgreementConfigResponse,modelAgreementConfigInfo'
-'查询签约申请详情:modelAgreementDetailResponse,modelAgreementDetailInfo,modelAgreementServicePkgItem,modelAgreementTagItem,modelAgreementAttathItem'
+'查询签约申请详情:modelAgreementApplyDetailResponse,modelAgreementApplyDetailInfo,modelAgreementServicePkgItem,modelAgreementTagItem,modelAgreementAttathItem'
 '新建签约申请（草稿）:modelAgreementApplyAddResponse'
 '修改签约申请（草稿）:modelAgreementApplyModifyResponse'
 '提交签约申请（审核）:modelAgreementSubmitResponse,modelAgreementSubmitInfo'

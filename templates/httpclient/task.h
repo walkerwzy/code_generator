@@ -13,10 +13,13 @@ ${endpoints.map(m=>
 
 @interface ${modulename} : PMLRESTBaseHD
 ${
-endpoints.map(e=>`
+endpoints.map((e,i)=>`
 /**
  * ${e.des}
- */
+ 
+${argdes[i].map(p=>
+` * @param ${p}
+`).join('')} */
 - (NSURLSessionDataTask *)${e.method}:(NSDictionary *)params completion:(void (^)(${e.model} *response, NSError *error))completion;`).join('')}
 
 @end`
