@@ -8,7 +8,7 @@
 
 #import <PMRESTLib/PMRESTLib.h>
 ${endpoints.map(m=>
-`#import "${m.model}";
+`#import "${m.model}.h"
 `).join('')}
 
 @interface ${modulename} : PMLRESTBaseHD

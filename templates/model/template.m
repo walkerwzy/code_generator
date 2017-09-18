@@ -6,7 +6,7 @@
 //  Copyright © ${(new Date()).getFullYear()} ${copyright}  All rights reserved.
 //
 
-#import ${model.className}.h
+#import "${model.className}.h"
 
 @implementation ${model.className}
 

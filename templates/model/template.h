@@ -8,7 +8,7 @@
 
 #import <PMRESTLib/PMRESTLib.h>
 ${model.props.filter(m=>m.model).map(prop =>
-`#import ${prop.model}.h
+`#import "${prop.model}.h"
 `).join('')}
 
 @interface ${model.className} : ${model.baseName}
