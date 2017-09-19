@@ -106,7 +106,7 @@ function parseResponseTable(table, classMeta) {
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
         let isArray = ptype.toLowerCase() == 'list';
         if(isComplexObj) ptype = typeFactory.next().value;
-        if(isComplexObj && program.verbose) console.log(`${pname} ==> ${ptype}`);
+        if(isComplexObj) console.log(`${pname} ==> ${ptype}`);
         if(ptype == "object") 
             return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
         if(!ptype || ptype.length == 0) 
