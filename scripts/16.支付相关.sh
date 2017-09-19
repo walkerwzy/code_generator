@@ -8,9 +8,9 @@ verbose=false
 modulename='taskHealthEducation'
 models=(
 #获取支付参数（签约）
-'modelDemo1,modelDemo2'
+'modelAgrmtAppayPayParam,modelUnifiedPayDTO'
 #获取支付参数（订单）
-'modelDemo3,modelDemo4'
+'modelSrvsPkgsOrderPayParam,modelUnifiedPayDTO'
 )
 
 for model in ${models[@]}; do

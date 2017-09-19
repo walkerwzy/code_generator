@@ -62,4 +62,5 @@ package-lock.json
 output.json
 .DS_Store
 models/
+tasks/
 output_*
