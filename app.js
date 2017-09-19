@@ -139,7 +139,7 @@ function parseRequestTable(table) {
     .each((i, tr) => {
         if(i<2) return;
         let tds     = Array.from($(tr).children('td'));
-        if($(tds[0]).text() == '业务参数') return;
+        if($(tds[0]).text() == '业务参数' || $(tds[0]).text().trim().length == 0) return;
         let propdes = tds.map(t=>$(t).text()).join(' ');
         param_des.push(propdes);
     });
@@ -148,7 +148,7 @@ function parseRequestTable(table) {
 
 // 根据解析出路径, 响应类型, 和参数数组
 function parseEndpoints(uris){
-    endpoints       = uris.match(/\}\/.*?\.json/ig).map(m=>m.replace('}',''));  // 从文档中提取接口地址
+    endpoints       = uris.match(/\/[a-zA-Z]+.*?\.json/ig).map(m=>m.replace('}',''));  // 从文档中提取接口地址
     responseModel   = endpoints.map(e=>'Response'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json',''))  // 从接口地址生成返回值名
     methods         = endpoints.map(e=>'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
 }
