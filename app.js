@@ -265,8 +265,10 @@ async function parseTemplate() {
         m_file      = getPath(out_task, `${modulename}.m`);
     if(endpoints.length!=methodArgs.length)
         return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致
-    if(endpoints.length!=methodTitles.length)
+    if(endpoints.length>methodTitles.length)
         return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
+    if(endpoints.length<methodTitles.length)
+        console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
     endpoints = endpoints.map((e,i)=>{
         return {
         "path": e,
