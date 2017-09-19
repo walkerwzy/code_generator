@@ -28,7 +28,6 @@ program
     .option('-b, --base [name]', 'set the base class names', collect, [])
     .option('-c, --classes [name]', 'set the class names', collect, [])
     .option('-C, --batchclasses [name,name,name]', 'batch sub class names', batchCollect, [])
-    .option('-d, --des [name]', 'set each root model a description', collect, [])
     .option('-D, --batchdes [name]', 'set each root model a description', batchCollect, [])
     .option('-p, --passkeys [key]', 'set exclued keys', collect, [])
     .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', batchCollect, [])
@@ -42,20 +41,32 @@ let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLMode
     classCollect    = [...program.classes, ...program.batchclasses],
     dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
-    typeDes         = [...program.des, ...program.batchdes],
     typeFactory     = classNameGenerator();
+
+let entities        = [], // 实体类对应的数组
+    methodArgs      = [], // 方法参数对应的数组
+    endpoints       = [], // 接口请求地址数组
+    responseModel   = [], // 接口返回值类型数组 => 完全由 endpoint 转化而来
+    methods         = []; // 接口对应方法名数组 => 完全由 endpoint 转化而来 {name: param:}
+    methodTitles    = []; // 接口标题数组
+    respFactory     = responseModelGenerator();
 
 (async () => {
 let content         = await readFile(program.file),
-    $               = cheerio.load(content),
-    responseJSON     = [],
-    argsJSON        = [];
+    $               = cheerio.load(content);
+// 解析文本, 得到[enpoints, resopnsemodel, methods]
+await parseEndpoints($(".wiki-content p").text());
+// 解析文本, 得到方法标题列表
+$(".wiki-content h2[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
+// 解析请求和响应的 Table
 $(".wiki-content>.table-wrap").each((i, table) => {
-    if(i%2 == 0) return parseRequestTable(table);
-    parseResponseTable(table);
+    if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
+    parseResponseTable(table);  // => 得到实体类数组
 });  
-if(program.debug) await fs.writeJson('./output.json', responseJSON).catch(console.log);
-await parseTemplate(responseJSON, $('.wiki-content p').text(), argsJSON).catch(console.log);
+if(program.debug) await fs.writeJson('./output.json', responseModel).catch(console.log);
+// 应用模板
+await parseTemplate().catch(console.log);
+// 完成
 if(program.verbose) console.log("done!");
 
 function parseResponseTable(table, classMeta) {
@@ -68,7 +79,7 @@ function parseResponseTable(table, classMeta) {
         baseName    = baseClasses[1];
         isRoot      = false;
     }else{
-        modelName = typeFactory.next().value;
+        modelName = respFactory.next().value;
     }
     let rowIsTable = false,
         props = [],
@@ -119,7 +130,7 @@ function parseResponseTable(table, classMeta) {
         }
         props.push(prop);
        }); // end of basetable > tr > foreach
-        responseJSON.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
+        entities.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
         if(program.verbose) console.log("生成模型:", modelName) 
      }
 function parseRequestTable(table) {
@@ -132,12 +143,23 @@ function parseRequestTable(table) {
         let propdes = tds.map(t=>$(t).text()).join(' ');
         param_des.push(propdes);
     });
-    argsJSON.push(param_des);
+    methodArgs.push(param_des);
+}
+
+// 根据解析出路径, 响应类型, 和参数数组
+function parseEndpoints(uris){
+    endpoints       = uris.match(/\}\/.*?\.json/ig).map(m=>m.replace('}',''));  // 从文档中提取接口地址
+    responseModel   = endpoints.map(e=>'Response'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json',''))  // 从接口地址生成返回值名
+    methods         = endpoints.map(e=>'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
 }
 })().catch(console.log);
 
+// 响应类类名生成器
+function* responseModelGenerator() {
+    yield* responseModel;
+}
 
-// 类名生成器
+// 子类名生成器
 function* classNameGenerator() {
     yield* classCollect;
 }
@@ -154,7 +176,8 @@ function isObjectOrArray(keystr, typestr) {
     let isUserDefined = dataKeys.includes(keystr),
         isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr),
         isPrimaryList = [intlist, strlist].includes(typestr);
-    return isUserDefined && !isPrimaryType && !isPrimaryList; 
+    // return isUserDefined || !isPrimaryType && !isPrimaryList; 
+    return !isPrimaryType && !isPrimaryList;  // 不再考虑用户定义, 发现非简单类型都默认下一行是子表
         
 }
 
@@ -206,7 +229,7 @@ async function genFileFromTemplate(filepath, tpl) {
 }
 
 // 参数: 模型, 文本, 入参描述
-async function parseTemplate(filejson, filetext, argdes) {
+async function parseTemplate() {
     if(program.verbose) console.log("开始应用模板");
     let copyright   = program.copyright,
         projectname = program.project,
@@ -223,16 +246,16 @@ async function parseTemplate(filejson, filetext, argdes) {
     let out_model   = "output_model",
         out_task    = "output_task",
         exist_file  = []; // 重复定义的类, 只生成一次, 生成过一次就丢到这个数组里打标
-        rootclasses = []; // 每个表格对应一个root class
     await fs.emptyDir(out_model); // 创建/清空输出文件夹
     await fs.emptyDir(out_task); // 创建/清空输出文件夹
     if(program.verbose) console.log("开始生成实体类")
-    filejson.forEach(async (model, index) => {
+    entities.forEach(async (model, index) => {
+        // 有些子类字段是一样的, 我们写脚本的时候把类名写成一样的, 此处会 pass 掉
+        // 但只对单次执行脚本有效
         if(classCollect.filter(m=>m==model.className).length>1) {
             if(exist_file.includes(model)) return;
             exist_file.push(model);
         }
-        if(model.isRoot) rootclasses.push(model.className);
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
@@ -245,23 +268,22 @@ async function parseTemplate(filejson, filetext, argdes) {
     // ===================
     if(program.verbose) console.log("开始生成请求类");
     let h_file      = getPath(out_task, `${modulename}.h`),
-        m_file      = getPath(out_task, `${modulename}.m`),
-        endpoints    = filetext.match(/(\/.*?\.json)/ig);  // 从文档中提取接口地址
-    if(argdes.length!=endpoints.length)
-        return console.log("接口数量与入参数量不一致的", endpoints, argdes);
-    if(rootclasses.length!=typeDes.length)
-        return console.log("接口描述数量与接口返回值数量不一致", typeDes, rootclasses);
-    if(rootclasses.length!=endpoints.length)
-        return console.log("接口数量与接口返回值数量不一致", endpoints, rootclasses);
+        m_file      = getPath(out_task, `${modulename}.m`);
+    if(endpoints.length!=methodArgs.length)
+        return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致
+    if(endpoints.length!=methodTitles.length)
+        return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
     endpoints = endpoints.map((e,i)=>{
         return {
         "path": e,
-        "method": 'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json',''),
-        "model": rootclasses[i],
-        "des": typeDes[i]
+        "method": methods[i],
+        "model": responseModel[i],
+        "des": methodTitles[i],
+        "args": methodArgs[i]
     }
     });
-    await genFileFromTemplate(h_file, eval(h_task));
-    await genFileFromTemplate(m_file, eval(m_task));
+    await genFileFromTemplate(h_file, eval(h_task)).catch(console.log);
+    await genFileFromTemplate(m_file, eval(m_task)).catch(console.log);
+
     console.log(`all done. model path [${out_model}], task path [${out_task}]`)
 }
