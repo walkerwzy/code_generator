@@ -23,8 +23,6 @@ program
     .usage('[option] <file ...>')
     .option('-f, --file <type>', 'set input file name','index.html')
     .option('-m, --module [name]', 'set the module name')
-    .option('-k, --datakeys <keys>', 'set data key names', collect, [])
-    .option('-K, --batchdatakeys <key,key,key>', 'batch set data keys', batchCollect, [])
     .option('-b, --base [name]', 'set the base class names', collect, [])
     .option('-c, --classes [name]', 'set the class names', collect, [])
     .option('-C, --batchclasses [name,name,name]', 'batch sub class names', batchCollect, [])
@@ -39,7 +37,6 @@ program
     .parse(process.argv);
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
     classCollect    = [...program.classes, ...program.batchclasses],
-    dataKeys        = ['data', ...program.datakeys, ...program.batchdatakeys], // 注: data 不是必需
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
     typeFactory     = classNameGenerator();
 
@@ -55,8 +52,10 @@ let entities        = [], // 实体类对应的数组
 let content         = await readFile(program.file),
     $               = cheerio.load(content);
 // 解析文本, 得到[enpoints, resopnsemodel, methods]
-await parseEndpoints($(".wiki-content p").text());
+parseEndpoints($(".wiki-content p").text());
 // 解析文本, 得到方法标题列表
+$(".wiki-content *:has(.toc-macro)").remove(); // 移除目录
+$(".wiki-content h1[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
 $(".wiki-content h2[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
 // 解析请求和响应的 Table
 $(".wiki-content>.table-wrap").each((i, table) => {
@@ -107,10 +106,11 @@ function parseResponseTable(table, classMeta) {
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
         let isArray = ptype.toLowerCase() == 'list';
         if(isComplexObj) ptype = typeFactory.next().value;
+        if(isComplexObj && program.verbose) console.log(`${pname} ==> ${ptype}`);
         if(ptype == "object") 
             return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
         if(!ptype || ptype.length == 0) 
-            return console.log("类名个数不符");  // 生成器没生成类名, 说明数量给少了
+            return console.log("类名个数不符", $(tr).text());  // 生成器没生成类名, 说明数量给少了
         if(ptype == 'list') 
             return console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isComplexObj)
         let assume_type = assumeVarType(ptype, isArray, ptype);
@@ -173,12 +173,9 @@ async function readFile(filename) {
 // 是否对象或数组(简单数组不算)
 function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
-    let isUserDefined = dataKeys.includes(keystr),
-        isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr),
+    let isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean'].includes(typestr),
         isPrimaryList = [intlist, strlist].includes(typestr);
-    // return isUserDefined || !isPrimaryType && !isPrimaryList; 
     return !isPrimaryType && !isPrimaryList;  // 不再考虑用户定义, 发现非简单类型都默认下一行是子表
-        
 }
 
 /**
@@ -199,10 +196,7 @@ function assumeVarType(str, isArray, model) {
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSInteger> *";
-    else {
-        if(program.verbose) console.log("====user defined type: =====", str);
-        model_type = model + " *";
-    }
+    else model_type = model + " *";
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
     model_type = model_type.replace(' *','');
     return [var_type, model_type];
