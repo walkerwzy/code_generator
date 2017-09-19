@@ -5,7 +5,7 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
-modulename=taskAgreementApply
+modulename='taskAgreementApply'
 models=(
 #获取配置信息
 'modelAgreementApplyConfigInfo'

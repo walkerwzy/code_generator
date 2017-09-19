@@ -5,7 +5,7 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
-modulename=taskAgreementRel
+modulename='taskAgreementRel'
 models=(
 #是否存在绑定关系
 #绑定签约关系

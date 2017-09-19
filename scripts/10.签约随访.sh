@@ -5,6 +5,7 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
+modulename='taskFollowUp'
 models=(
 #随访模板列表
 'modelFollowTemplateListItem'
