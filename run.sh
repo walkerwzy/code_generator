@@ -5,6 +5,7 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
+modulename='taskServicePkgOrder'
 models=(
 #获取扫码后待操作的订单
 #订单列表
