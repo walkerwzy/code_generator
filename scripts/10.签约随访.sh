@@ -6,42 +6,32 @@ fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
 models=(
-'随访模板列表:modelFollowTemplateListResponse,modelFollowTemplateListItem'
-'随访模板详情:modelFollowTemplateDetailResponse,modelFollowTemplateDetail,modelFollowTemplateDetailField,modelFollowTemplateFieldOption'
-'随访记录列表:modelFollowUpListResponse,modelFollowUpListItem'
-'随访评价:modelFollowEvaluateResponse'
-'随访详情:modelFollowUpDetailResponse,modelFollowUpDetailInfo,modelFollowUpDetailField'
-)
-datakeys=(
-'fields'
-'options'
+#随访模板列表
+'modelFollowTemplateListItem'
+#随访模板详情
+'modelFollowTemplateDetail,modelFollowTemplateDetailField,modelFollowTemplateFieldOption'
+#随访记录列表
+'modelFollowUpListItem'
+#随访评价
+#随访详情
+'modelFollowUpDetailInfo,modelFollowUpDetailField'
 )
 
 for model in ${models[@]}; do
-	desp=${desp}${model%%:*},
-	types=${types}${model#*:},
+    types=${types}${model},
 done
 types=${types}
-desp=${desp}
-
-for key in ${datakeys[@]}; do
-	keys=${keys}${key},
-done
-keys=${keys}
-# 如果 datakey 比较简单, 请直接覆盖keys变量
 
 if [ "$debug" = true ] ; then
-	enableDebug='--debug'
+    enableDebug='--debug'
 fi
 
 if [ "$verbose" = true ] ; then
-	enableVerbose='--verbose'
+    enableVerbose='--verbose'
 fi
 
 ./app.js ${enableVerbose} ${enableDebug} \
     -C ${types} \
-    -D ${desp} \
-	-K ${keys} \
     -P ${passkeys} \
     -f ${fileuri} \
     -a ${author} \
