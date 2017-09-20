@@ -218,7 +218,7 @@ async function getFileContent(...components) {
     return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
-async function genFileFromTemplate(filepath, tpl) {
+async function renderFile(filepath, tpl) {
     return await fs.writeFile(filepath, tpl, 'utf8').catch(console.log);
 }
 
@@ -254,8 +254,8 @@ async function parseTemplate() {
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
             m_file = getPath(out_model, model.className+'.m');
-        await genFileFromTemplate(h_file, eval(h_content)).catch(console.log);
-        await genFileFromTemplate(m_file, eval(m_content)).catch(console.log);
+        await renderFile(h_file, eval(h_content)).catch(console.log);
+        await renderFile(m_file, eval(m_content)).catch(console.log);
     });
     // ===================
     // gen http request (task) file
@@ -278,8 +278,8 @@ async function parseTemplate() {
         "args": methodArgs[i]
     }
     });
-    await genFileFromTemplate(h_file, eval(h_task)).catch(console.log);
-    await genFileFromTemplate(m_file, eval(m_task)).catch(console.log);
+    await renderFile(h_file, eval(h_task)).catch(console.log);
+    await renderFile(m_file, eval(m_task)).catch(console.log);
 
     console.log(`all done. model path [${out_model}], task path [${out_task}]`)
 }
