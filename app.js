@@ -281,5 +281,5 @@ async function parseTemplate() {
     await renderFile(h_file, eval(h_task)).catch(console.log);
     await renderFile(m_file, eval(m_task)).catch(console.log);
 
-    console.log('\n=====END=====')
+    console.log('=====END=====')
 }
