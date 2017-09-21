@@ -5,7 +5,7 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
-modulename='taskHealthEducation'
+modulename='taskPayment'
 models=(
 #获取支付参数（签约）
 'modelAgrmtAppayPayParam,modelUnifiedPayDTO'
