@@ -11,7 +11,7 @@
 @implementation ${model.className}
 
 + (NSDictionary *)JSONKeyPathsByPropertyKey {
-	${hasIdKey ? `NSMutableDictionary *dict = [[NSDictionary  mtl_identityPropertyMapWithModel:[self class]] mutableCopy];
+	${model.hasIdKey ? `NSMutableDictionary *dict = [[NSDictionary  mtl_identityPropertyMapWithModel:[self class]] mutableCopy];
     [dict setObject:@"id" forKey:@"recordId"];
     return dict;` : 'return [NSDictionary  mtl_identityPropertyMapWithModel:[self class]];'};
 }

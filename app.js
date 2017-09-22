@@ -81,6 +81,7 @@ function parseResponseTable(table, classMeta) {
         modelName   = respFactory.next().value;
     }
     let rowIsTable  = false,
+        hasIdKey    = false,  // 该表格里如果有 id 键会打标, 因为 id 在 OC 里是关键字
         props       = [],
         complexProperty; // 如果当前行表示是个对象或数据, 把元数据保存, 用来生成子表格对应的类
     $(table).children(".confluenceTable").children("tbody").children("tr")
@@ -120,6 +121,10 @@ function parseResponseTable(table, classMeta) {
             "type": assume_type[0],
             "isArray": isArray
         };
+        if(pname == 'id') {
+            prop["name"] = "recordId";
+            hasIdKey = true;
+        }
         if(pdes) {
             prop["des"] = prop["des"] + " " + pdes;
         }
@@ -130,7 +135,7 @@ function parseResponseTable(table, classMeta) {
         }
         props.push(prop);
        }); // end of basetable > tr > foreach
-        entities.push({"isRoot": isRoot, "className": modelName,"baseName": baseName, "props": props});
+        entities.push({"isRoot": isRoot, "hasIdKey": hasIdKey, "className": modelName,"baseName": baseName, "props": props});
         if(program.verbose) console.log("生成模型:", modelName) 
      }
 function parseRequestTable(table) {
@@ -251,16 +256,6 @@ async function parseTemplate() {
             exist_file.push(model);
         }
         let m_content = model.isRoot ? m_content2 : m_content1;
-        // 20180921添加: 遍历这个类, 如果有名为id的键, 打个标(给m文件处理), 并更名
-        let hasIdKey = false;
-        model.props.forEach(p=>{
-            if(p.name == 'id') {
-                hasIdKey = true;
-                p.name = 'recordId';
-                console.log("碰到一个 id 属性", p);
-                return;
-            }
-        });
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
             m_file = getPath(out_model, model.className+'.m');
