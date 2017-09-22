@@ -1,16 +1,14 @@
 #!/bin/bash
-author='walker'
+author='Evan'
 projectname='Homedoctor'
 passkeys='code,flag,message'
-fileuri='/Users/walker/Desktop/index.html'
+fileuri='/Users/Evan/Desktop/index.html'
 debug=true
 verbose=false
-modulename='taskPayment'
+modulename='taskFileUpload'
 models=(
-#获取支付参数（签约）
-'modelAgrmtAppayPayParam,modelUnifiedPayDTO'
-#获取支付参数（订单）
-'modelSrvsPkgsOrderPayParam,modelUnifiedPayDTO'
+#文件上传
+'modelFileUpload'
 )
 
 for model in ${models[@]}; do

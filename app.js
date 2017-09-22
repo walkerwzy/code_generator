@@ -62,7 +62,7 @@ $(".wiki-content>.table-wrap").each((i, table) => {
     if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
     parseResponseTable(table);  // => 得到实体类数组
 });  
-if(program.debug) await fs.writeJson('./output.json', responseModel).catch(console.log);
+if(program.debug) await fs.writeJson('./output.json', entities).catch(console.log);
 // 应用模板
 await parseTemplate().catch(console.log);
 // 完成
@@ -78,10 +78,10 @@ function parseResponseTable(table, classMeta) {
         baseName    = baseClasses[1];
         isRoot      = false;
     }else{
-        modelName = respFactory.next().value;
+        modelName   = respFactory.next().value;
     }
-    let rowIsTable = false,
-        props = [],
+    let rowIsTable  = false,
+        props       = [],
         complexProperty; // 如果当前行表示是个对象或数据, 把元数据保存, 用来生成子表格对应的类
     $(table).children(".confluenceTable").children("tbody").children("tr")
     .each((i,tr) => {
@@ -218,7 +218,7 @@ async function getFileContent(...components) {
     return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
-async function genFileFromTemplate(filepath, tpl) {
+async function renderFile(filepath, tpl) {
     return await fs.writeFile(filepath, tpl, 'utf8').catch(console.log);
 }
 
@@ -251,11 +251,21 @@ async function parseTemplate() {
             exist_file.push(model);
         }
         let m_content = model.isRoot ? m_content2 : m_content1;
+        // 20180921添加: 遍历这个类, 如果有名为id的键, 打个标(给m文件处理), 并更名
+        let hasIdKey = false;
+        model.props.forEach(p=>{
+            if(p.name == 'id') {
+                hasIdKey = true;
+                p.name = 'recordId';
+                console.log("碰到一个 id 属性", p);
+                return;
+            }
+        });
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
             m_file = getPath(out_model, model.className+'.m');
-        await genFileFromTemplate(h_file, eval(h_content)).catch(console.log);
-        await genFileFromTemplate(m_file, eval(m_content)).catch(console.log);
+        await renderFile(h_file, eval(h_content)).catch(console.log);
+        await renderFile(m_file, eval(m_content)).catch(console.log);
     });
     // ===================
     // gen http request (task) file
@@ -278,8 +288,8 @@ async function parseTemplate() {
         "args": methodArgs[i]
     }
     });
-    await genFileFromTemplate(h_file, eval(h_task)).catch(console.log);
-    await genFileFromTemplate(m_file, eval(m_task)).catch(console.log);
+    await renderFile(h_file, eval(h_task)).catch(console.log);
+    await renderFile(m_file, eval(m_task)).catch(console.log);
 
-    console.log(`all done. model path [${out_model}], task path [${out_task}]`)
+    console.log('=====END=====')
 }

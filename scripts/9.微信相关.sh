@@ -5,12 +5,13 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
-modulename='taskPayment'
+modulename='taskWeChat'
 models=(
-#获取支付参数（签约）
-'modelAgrmtAppayPayParam,modelUnifiedPayDTO'
-#获取支付参数（订单）
-'modelSrvsPkgsOrderPayParam,modelUnifiedPayDTO'
+#微信免登陆
+'modelSNSUserAuth'
+#绑定微医用户
+'modelSNSUserAuth'
+#获取openid
 )
 
 for model in ${models[@]}; do

@@ -5,12 +5,12 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
-modulename='taskPayment'
+modulename='taskHealthElement'
 models=(
-#获取支付参数（签约）
-'modelAgrmtAppayPayParam,modelUnifiedPayDTO'
-#获取支付参数（订单）
-'modelSrvsPkgsOrderPayParam,modelUnifiedPayDTO'
+#基本健康档案模板
+'modelHealthElementTemplate,modelHealthElementOptioModel'
+#健康档案详情
+'modelHealthElementInfo'
 )
 
 for model in ${models[@]}; do

@@ -20,9 +20,7 @@ models=(
 #获取配置项
 'modelOrderConfigInfo,modelOrderConfigShowItem,modelOrderConfigRequireItem'
 #保存草稿
-'modelAgreementTagsInfo'
 #修改草稿
-'modelAgreementTagsInfo'
 #草稿详情
 'modelAgreemntOrderDetailInfo,modelAgreementAttatch,modelAgreementTagsInfo'
 #订单校验
@@ -31,9 +29,9 @@ models=(
 #订单详情
 'modelOrderDetailInfo,modelOrderDetailImgInfo,modelOrderDetailPkgItem'
 #服务包详情
-'modelServicePackageInfo,modelServicePackageDO'
+'modelServicePackageInfo,modelServicePackageItemDO'
 #服务包列表（签约个人和签约团队的所有服务包）
-'modelServicePackageInfo'
+'modelServicePackageListItem'
 )
 
 for model in ${models[@]}; do

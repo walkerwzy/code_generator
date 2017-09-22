@@ -5,12 +5,17 @@ passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=false
-modulename='taskPayment'
+modulename='taskChat'
 models=(
-#获取支付参数（签约）
-'modelAgrmtAppayPayParam,modelUnifiedPayDTO'
-#获取支付参数（订单）
-'modelSrvsPkgsOrderPayParam,modelUnifiedPayDTO'
+#聊天历史记录列表
+'modelChatListItem'
+#聊天服务器地址
+'modelChatListServer'
+#设置聊天已读
+#轮询聊天历史记录列表
+'modelChatListPollItem'
+#轮询聊天添加记录
+#电话问诊请求发起
 )
 
 for model in ${models[@]}; do
