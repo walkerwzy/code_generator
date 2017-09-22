@@ -8,7 +8,7 @@ verbose=false
 modulename='taskArea'
 models=(
 #地区列表
-'modelAreaListList'
+'modelAreaListItem'
 #根据IP地址定位省市区
 'modelAreaGetbyipItem'
 )
