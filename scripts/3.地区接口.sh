@@ -1,8 +1,8 @@
 #!/bin/bash
-author='jiangli'
+author='Evan'
 projectname='Homedoctor'
 passkeys='code,flag,message'
-fileuri='/Users/jiangli/Desktop/index.html'
+fileuri='/Users/Evan/Desktop/index.html'
 debug=true
 verbose=false
 modulename='taskArea'
