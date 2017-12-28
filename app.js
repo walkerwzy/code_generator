@@ -200,7 +200,7 @@ function assumeVarType(str, isArray, model) {
     else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
-    else if(l_str == intlist) model_type = "NSArray<NSInteger> *";
+    else if(l_str == intlist) model_type = "NSArray<NSNumber *> *";
     else model_type = model + " *";
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
     model_type = model_type.replace(' *','');
