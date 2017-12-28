@@ -15,7 +15,16 @@
     return [super mergeDict:dict withDict:[super JSONKeyPathsByPropertyKey]];
 }
 
-${model.props.filter(m=>m.model).map(prop => {
+${model.props.map(prop => {
+if(prop.type=='NSInteger') return `
++ (NSValueTransformer *)${prop.name}JSONTransformer {
+	return [MTLValueTransformer transformerUsingForwardBlock:^id(id value, BOOL *success, NSError *__autoreleasing *error) {
+	    NSString *str = [NSString stringWithFormat:@"%@", value];
+	    NSInteger i = [str integerValue];
+	    return @(i);
+	}];
+}`;
+if(!prop.model) return '';
 if(prop.isArray) return `
 + (NSValueTransformer *)${prop.name}JSONTransformer {
     return [MTLJSONAdapter arrayTransformerWithModelClass:[${prop.model} class]];
