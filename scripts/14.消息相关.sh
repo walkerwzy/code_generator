@@ -7,9 +7,15 @@ debug=true
 verbose=false
 modulename='taskMessage'
 models=(
-#签约消息提醒列表
+#订单消息列表
+'modelOrderMessageListItem'
+#设置订单消息为已读
+#签约提醒消息列表
 'modelMessageListItem'
-#设置消息为已读
+#设置签约消息为已读
+#服务预约消息列表
+'modelServiceMessageListItem'
+#设置服务预约消息为已读
 )
 
 for model in ${models[@]}; do

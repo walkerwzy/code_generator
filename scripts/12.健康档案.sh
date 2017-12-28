@@ -8,9 +8,10 @@ verbose=false
 modulename='taskHealthElement'
 models=(
 #基本健康档案模板
-'modelHealthElementTemplate,modelHealthElementOptioModel'
+'modelHealthElementTemplate,modelHealthOptionListItem'
 #健康档案详情
-'modelHealthElementInfo'
+'modelHealthElementInfo,modelAgrmSubmitFieldDoListItem, modelAgrmSubmitOptionDoListItem'
+#添加基本健康信息
 )
 
 for model in ${models[@]}; do
