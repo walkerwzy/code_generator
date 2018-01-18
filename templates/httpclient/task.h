@@ -18,7 +18,7 @@ endpoints.map(e=>`
  * ${e.des}
  
 ${e.args.map(p=>
-` * @param ${p}
+` * @param ${p.replace(/\s/ig, '')}
 `).join('')} */
 - (NSURLSessionDataTask *)${e.method}:(NSDictionary *)params completion:(void (^)(${e.model} *response, NSError *error))completion;`).join('')}
 
