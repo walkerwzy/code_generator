@@ -11,7 +11,7 @@ ${endpoints.map(m=>
 `#import "${m.model}.h"
 `).join('')}
 
-@interface ${modulename} : PMLRESTBaseHD
+@interface ${modulename} : ${httpclient}
 ${
 endpoints.map(e=>`
 /**

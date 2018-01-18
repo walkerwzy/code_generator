@@ -7,6 +7,7 @@ offset=1
 debug=true
 verbose=false
 modulename='taskUserInfo'
+httpclient='PMLRESTBaseDoctor'
 models=(
 #用户登录
 'modelUserProfile'
@@ -42,4 +43,5 @@ fi
     -a ${author} \
     -m ${modulename} \
     -j ${projectname} \
+    -B ${httpclient} \
     -o ${offset}

@@ -24,6 +24,7 @@ program
     .option('-f, --file <type>', 'set input file name','index.html')
     .option('-m, --module [name]', 'set the module name')
     .option('-b, --base [name]', 'set the base class names', collect, [])
+    .option('-B, --clientbase [name', 'set the httpclient base class', 'PMLRESTBase')
     .option('-c, --classes [name]', 'set the class names', collect, [])
     .option('-C, --batchclasses [name,name,name]', 'batch sub class names', batchCollect, [])
     .option('-D, --batchdes [name]', 'set each root model a description', batchCollect, [])
@@ -240,6 +241,7 @@ async function parseTemplate() {
         projectname = program.project,
         author      = program.author,
         modulename  = program.module,
+		httpclient  = program.clientbase,
         model_path  = "templates/model",
         task_path   = "templates/httpclient",
         // 模板内容
@@ -282,6 +284,7 @@ async function parseTemplate() {
         console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
     endpoints = endpoints.map((e,i)=>{
         return {
+        "httpclient": httpclient,
         "path": e,
         "method": methods[i],
         "model": responseModel[i],
@@ -289,7 +292,6 @@ async function parseTemplate() {
         "args": methodArgs[i]
     }
     });
-    console.log(endpoints);
     await renderFile(h_file, eval(h_task)).catch(console.log);
     await renderFile(m_file, eval(m_task)).catch(console.log);
 

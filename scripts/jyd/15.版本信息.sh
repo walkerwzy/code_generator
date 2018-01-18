@@ -7,6 +7,7 @@ offset=0
 debug=true
 verbose=false
 modulename='taskVersionInfo'
+httpclient='PMLRESTBaseDoctor'
 models=(
 #获取版本信息
 'modelVersionInfo'
@@ -33,4 +34,5 @@ fi
     -a ${author} \
     -m ${modulename} \
     -j ${projectname} \
+    -B ${httpclient} \
     -o ${offset}
