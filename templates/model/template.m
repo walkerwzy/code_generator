@@ -25,6 +25,14 @@ if(prop.type=='NSInteger') return `
 	    return @(i);
 	}];
 }`;
+if(prop.type=='CGFloat') return `
++ (NSValueTransformer *)${prop.name}JSONTransformer {
+	return [MTLValueTransformer transformerUsingForwardBlock:^id(id value, BOOL *success, NSError *__autoreleasing *error) {
+	    NSString *str = [NSString stringWithFormat:@"%@", value];
+	    CGFloat i = [str floatValue];
+	    return @(i);
+	}];
+}`;
 if(!prop.model) return '';
 if(prop.isArray) return `
 + (NSValueTransformer *)${prop.name}JSONTransformer {
@@ -34,6 +42,6 @@ return`
 + (NSValueTransformer *)${prop.name}JSONTransformer {
     return [MTLJSONAdapter dictionaryTransformerWithModelClass:[${prop.model} class]];
 }`;
-}).join('')}
+}).join('').trim()}
 
 @end`

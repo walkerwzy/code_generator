@@ -20,6 +20,6 @@ endpoints.map(e=>`
 ${e.args.map(p=>
 ` * @param ${p}
 `).join('')} */
-- (NSURLSessionDataTask *)${e.method}:(NSDictionary *)params completion:(void (^)(${e.model} *response, NSError *error))completion;`).join('')}
+- (NSURLSessionDataTask *)${e.method}:(NSDictionary *)params completion:(void (^)(${e.model} *response, NSError *error))completion;`).join('').trim()}
 
 @end`

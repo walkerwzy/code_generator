@@ -24,6 +24,6 @@ PMTASK_INIT_SINGLETON
 
 ${endpoints.map(e=>
 `PMTASK_EXPORT_IMP(${e.method}, ${e.model})
-`).join('')}
+`).join('').trim()}
 
 @end`

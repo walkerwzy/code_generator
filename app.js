@@ -125,7 +125,7 @@ function parseResponseTable(table, classMeta) {
         let assume_type = assumeVarType(ptype, isArray, ptype);
         let prop = {
             "name": pname, 
-            "des": tds.eq(1).text(), 
+            "des": tds.eq(1).text().replace(/[\s\/\*]/ig,''), 
             "type": assume_type[0],
             "isArray": isArray
         };
@@ -153,7 +153,7 @@ function parseRequestTable(table) {
         if(i<2) return;
         let tds     = Array.from($(tr).children('td'));
         if($(tds[0]).text() == '业务参数' || $(tds[0]).text().trim().length == 0) return;
-        let propdes = tds.map(t=>$(t).text().replace(/\s/ig, '')).join(' ');
+        let propdes = tds.map(t=>$(t).text().replace(/[\s]/ig, '')).join(' ');
         param_des.push(propdes);
     });
     methodArgs.push(param_des);
@@ -253,18 +253,24 @@ async function parseTemplate() {
         h_task      = await getFileContent(task_path, 'task.h'),
         m_task      = await getFileContent(task_path, 'task.m');
     let out_model   = "output_model",
-        out_task    = "output_task",
-        exist_file  = []; // 重复定义的类, 只生成一次, 生成过一次就丢到这个数组里打标
+        out_task    = "output_task";
     await fs.emptyDir(out_model); // 创建/清空输出文件夹
     await fs.emptyDir(out_task); // 创建/清空输出文件夹
-    if(program.verbose) console.log("开始生成实体类")
-    entities.forEach(async (model, index) => {
-        // 有些子类字段是一样的, 我们写脚本的时候把类名写成一样的, 此处会 pass 掉
-        // 但只对单次执行脚本有效
-        if(classCollect.filter(m=>m==model.className).length>1) {
-            if(exist_file.includes(model)) return;
-            exist_file.push(model);
-        }
+    if(program.verbose) console.log("开始生成实体类");
+    // 先去重
+    let usedModels = [],
+        datasource = [];
+    entities.forEach((model, index) => {
+        if(classCollect.filter(m=>m==model.className).length==1) return datasource.push(model);
+        if(usedModels.includes(model.className)) return;
+        usedModels.push(model.className);
+        datasource.push(model);
+    });
+    datasource.forEach(async (model, index) => {
+        //         if(classCollect.filter(m=>m==model.className).length>1) {
+        //     if(exist_file.includes(model)) return;
+        //     exist_file.push(model);
+        // }
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
@@ -278,8 +284,8 @@ async function parseTemplate() {
     if(program.verbose) console.log("开始生成请求类");
     let h_file      = getPath(out_task, `${modulename}.h`),
         m_file      = getPath(out_task, `${modulename}.m`);
-    if(endpoints.length!=methodArgs.length)
-        return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致
+    if(endpoints.length>methodArgs.length)
+        return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致, 但是入参可以多(有的接口不需要post->.json)
     if(endpoints.length>methodTitles.length)
         return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
     if(endpoints.length<methodTitles.length)

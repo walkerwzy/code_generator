@@ -19,11 +19,17 @@ if(prop.type == 'NSInteger') return `
  */
 @property (nonatomic, assign) ${prop.type} ${prop.name};
 `;
+else if(prop.type == 'CGFloat') return `
+/**
+ * ${prop.des}
+ */
+@property (nonatomic, assign) ${prop.type} ${prop.name};
+`;
 else if(prop.type == 'NSString *') return `
 /**
  * ${prop.des}
  */
-@property (nonatomic, copy) ${prop.type}${prop.name};
+@property (nonatomic, copy) ${prop.type} ${prop.name};
 `;
 else if(prop.type == 'BOOL') return `
 /**
@@ -36,6 +42,6 @@ return `
  * ${prop.des}
  */
 @property (nonatomic, strong) ${prop.type}${prop.name};
-`;}).join('')}
+`;}).join('').trim()}
 
 @end`

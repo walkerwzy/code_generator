@@ -6,23 +6,11 @@ fileuri='/Users/walker/Desktop/index.html'
 offset=1
 debug=true
 verbose=false
-modulename='taskUserInfo'
+modulename='taskBanner'
 httpclient='PMLRESTBaseDoctor'
 models=(
-#用户登录
-'modelUserProfile'
-#医生APP用户登录
-'modelUserProfile'
-#修改用户密码
-#找回密码
-#微信免登陆
-'modelUesrWechat'
-#退出登录
-#个人信息
-'modelUserDoctorInfo'
-#更改医生个人信息
-#获取签约患者的头像和姓名
-'modelUserDisplayInfo'
+#banner列表
+modelBannerListItem
 )
 
 for model in ${models[@]}; do
