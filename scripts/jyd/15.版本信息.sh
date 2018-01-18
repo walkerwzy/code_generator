@@ -3,23 +3,14 @@ author='walker'
 projectname='FamilyDoctor'
 passkeys='code,flag,message'
 fileuri='/Users/walker/Desktop/index.html'
-offset=1
+offset=0
 debug=true
 verbose=false
-modulename='taskUserInfo'
+modulename='taskVersionInfo'
 models=(
-#用户登录
-'modelUserProfile'
-#修改用户密码
-#找回密码
-#微信免登陆
-'modelUesrWechat'
-#退出登录
-#个人信息
-'modelUserDoctorInfo'
-#更改医生个人信息
-#获取签约患者的头像和姓名
-'modelUserDisplayInfo'
+#获取版本信息
+'modelVersionInfo'
+#下载地址(GET)
 )
 
 for model in ${models[@]}; do
