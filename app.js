@@ -6,6 +6,7 @@ let fs = require('fs-extra'),
     cheerio = require('cheerio'),
     strlist = 'list<string>',
     intlist = 'list<int>',
+    floatlist = 'list<float>',
     $;
 
 // 命令行参数
@@ -152,7 +153,7 @@ function parseRequestTable(table) {
         if(i<2) return;
         let tds     = Array.from($(tr).children('td'));
         if($(tds[0]).text() == '业务参数' || $(tds[0]).text().trim().length == 0) return;
-        let propdes = tds.map(t=>$(t).text()).join(' ');
+        let propdes = tds.map(t=>$(t).text().replace(/\s/ig, '')).join(' ');
         param_des.push(propdes);
     });
     methodArgs.push(param_des);
@@ -185,7 +186,7 @@ async function readFile(filename) {
 // 是否对象或数组(简单数组不算)
 function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
-    let isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean', 'date'].includes(typestr),
+    let isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'float', 'double'].includes(typestr),
         isPrimaryList = [intlist, strlist].includes(typestr);
     return !isPrimaryType && !isPrimaryList;  // 不再考虑用户定义, 发现非简单类型都默认下一行是子表
 }
@@ -206,6 +207,7 @@ function assumeVarType(str, isArray, model) {
     if(['string','date'].includes(l_str)) model_type = "NSString *";
     else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
+    else if(['float', 'dobule'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSNumber *> *";
     else model_type = model + " *";
