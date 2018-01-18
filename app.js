@@ -32,12 +32,14 @@ program
     .option('-a, --author [name]', 'set the author name', 'walker')
     .option('-j, --project [name]', 'set the project name', 'Project')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
+    .option('-o, --tableoffset [count]', 'how many table need skiped to parse', 0)
     .option('--debug', 'the output.json file will gen', false)
     .option('--verbose', 'show buzz logs', false)
     .parse(process.argv);
 let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
     classCollect    = [...program.classes, ...program.batchclasses],
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
+    tableoffset     = program.tableoffset,
     typeFactory     = classNameGenerator();
 
 let entities        = [], // 实体类对应的数组
@@ -51,8 +53,12 @@ let entities        = [], // 实体类对应的数组
 (async () => {
 let content         = await readFile(program.file),
     $               = cheerio.load(content);
+// 解析文本, 移除"样例"一节
+$(".wiki-content .table-wrap:contains({)").remove();
+// 解析文本, 移除不需要的 table (目前只支持移除从0开始的)
+if(tableoffset>0) $(".wiki-content .table-wrap").slice(0, tableoffset).remove();
 // 解析文本, 得到[enpoints, resopnsemodel, methods]
-parseEndpoints($(".wiki-content p").text());
+parseEndpoints($(".wiki-content p").text().replace(/\s/ig, ''));
 // 解析文本, 得到方法标题列表
 $(".wiki-content *:has(.toc-macro)").remove(); // 移除目录
 $(".wiki-content h1[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
@@ -100,7 +106,7 @@ function parseResponseTable(table, classMeta) {
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
-        let ptype = tds.eq(2).text().trim() || "object";      // 没有足够的列, 说明下一行是一个对象, 被合并单元格了, 如果是数组会标明是 list 的
+        let ptype = tds.eq(2).text().trim() || 'object';      // 没有足够的列, 说明下一行是一个对象, 被合并单元格了, 如果是数组会标明是 list 的
         let pdes  = tds.eq(3).text().trim() || "";
         if(!ptype || ptype.length == 0) 
             return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
@@ -279,10 +285,11 @@ async function parseTemplate() {
         "path": e,
         "method": methods[i],
         "model": responseModel[i],
-        "des": methodTitles[i],
+        "des": methodTitles[i].replace(/\s/ig, ''),
         "args": methodArgs[i]
     }
     });
+    console.log(endpoints);
     await renderFile(h_file, eval(h_task)).catch(console.log);
     await renderFile(m_file, eval(m_task)).catch(console.log);
 
