@@ -161,7 +161,7 @@ function parseRequestTable(table) {
 
 // 根据解析出路径, 响应类型, 和参数数组
 function parseEndpoints(uris){
-    endpoints       = uris.match(/\/[a-zA-Z]+.*?\.json/ig).map(m=>m.replace('}',''));  // 从文档中提取接口地址
+    endpoints       = uris.match(/\/[\w\/\.]+/ig).map(m=>m.replace('}','')).filter(m=>m.indexOf('.json')>0);  // 从文档中提取接口地址
     responseModel   = endpoints.map(e=>'Response'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json',''))  // 从接口地址生成返回值名
     methods         = endpoints.map(e=>'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
 }
