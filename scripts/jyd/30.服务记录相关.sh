@@ -6,17 +6,13 @@ fileuri='/Users/maweefeng/Desktop/index.html'
 offset=1
 debug=true
 verbose=false
-modulename='taskAgreement'
+modulename='taskServiceRecord'
 httpclient='PMLRESTBaseDoctor'
 models=(
-#签约关系列表
-'modelAgreeDataList','modelAgreeDataListItem','modelAgreeServicePkgsItem'
-#签约居民基础信息(只获取展示的有效字段)
-'modelAgreementCitizenItem'
+#服务包使用情况，服务历史列表
+'modelServiceRecordItem',
+#插入服务包使用情况
 
-#签约关系详情
-'modelAgreeDetailList','modelAgreementServicePkgsItem','modelServicePkgOrderDTOListItem','modelAgreementTagsListItem','modeltxWdInfoListItem'
-#修改签约居民信息
 
 )
 
