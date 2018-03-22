@@ -2,7 +2,7 @@
 author='Evan'
 projectname='FamilyDoctor'
 passkeys='code,flag,message'
-fileuri='/Users/Evan/Desktop/index.html'
+fileuri='/Users/maweefeng/Desktop/index.html'
 offset=1
 debug=true
 verbose=false
@@ -26,7 +26,7 @@ models=(
 'modelAgreementapplyDetailCrowdRelationDTOS'
 'modelAgreementapplyDetailAgreementAttachs'
 #签约申请详情(只获取展示的有效字段)
-'modelAgreementapplyBriefDetailData'
+'modelAgreementapplyBriefDetailData' 'modelAgreementapplyagreementAttachs' 'modelAgreementapplycrowdRelationList'
 #签约申请列表
 'modelAgreementapplyListData','modelAgreementapplyListItems','modelAgreementapplyListAgreementServicePkgs'
 #医生确认签约关系修改相关信息接口

@@ -12,7 +12,7 @@ models=(
 #签约关系列表
 'modelAgreeDataList','modelAgreeDataListItem','modelAgreeServicePkgsItem'
 #签约居民基础信息(只获取展示的有效字段)
-'modelAgreementCitizenItem'
+'modelAgreementCitizenItem' 'modelAgreementagreementAttachDTOList' 'modelAgreementcrowdRelationDOList'
 
 #签约关系详情
 'modelAgreeDetailList','modelAgreementServicePkgsItem','modelServicePkgOrderDTOListItem','modelAgreementTagsListItem','modeltxWdInfoListItem'
