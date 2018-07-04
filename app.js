@@ -33,12 +33,13 @@ program
     .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', batchCollect, [])
     .option('-a, --author [name]', 'set the author name', 'walker')
     .option('-j, --project [name]', 'set the project name', 'Project')
+    .option('-x, --prefix [name]', 'set the class prefix', 'WY')
     .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
     .option('-o, --tableoffset [count]', 'how many table need skiped to parse', 0)
     .option('--debug', 'the output.json file will gen', false)
     .option('--verbose', 'show buzz logs', false)
     .parse(process.argv);
-let baseClasses     = program.base.length || ['PMLResponseModelBaseHD', 'PMLModelBase'],
+let baseClasses     = program.base.length || ['NSObject'],// ['PMLResponseModelBaseHD', 'PMLModelBase'],
     classCollect    = [...program.classes, ...program.batchclasses],
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
     tableoffset     = program.tableoffset,
@@ -55,16 +56,23 @@ let entities        = [], // 实体类对应的数组
 (async () => {
 let content         = await readFile(program.file),
     $               = cheerio.load(content);
-// 解析文本, 移除"样例"一节
-$(".wiki-content .table-wrap:contains({)").remove();
+
+// 移除最后一个表格
+let table_count = $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").length;
+$(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(table_count-1, table_count).remove();
+console.log($(".layui-tab .layui-tab-content .layui-tab-item .layui-table").length);
+// 解析路径
+endpoints = [$(".layui-tab-title .layui-this").text().replace(/^\w*/,'')];
+// 根据路径生成方法名, 响应类名
+parseEndpoints();
 // 解析文本, 移除不需要的 table (目前只支持移除从0开始的)
-if(tableoffset>0) $(".wiki-content .table-wrap").slice(0, tableoffset).remove();
-// 解析文本, 得到[enpoints, resopnsemodel, methods]
-parseEndpoints($(".wiki-content p").text().replace(/\s/ig, ''));
+if(tableoffset>0) $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(0, tableoffset).remove();
 // 解析文本, 得到方法标题列表
 $(".wiki-content *:has(.toc-macro)").remove(); // 移除目录
-$(".wiki-content h1[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
-$(".wiki-content h2[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
+// $(".wiki-content h1[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
+// $(".wiki-content h2[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
+methodTitles = $(".layui-tab .layui-tab-content").text().match(/description\s.*/ig).map(e=>e.replace(/description\s*/ig,''));
+
 // 解析请求和响应的 Table
 $(".wiki-content>.table-wrap").each((i, table) => {
     if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
@@ -160,9 +168,8 @@ function parseRequestTable(table) {
 }
 
 // 根据解析出路径, 响应类型, 和参数数组
-function parseEndpoints(uris){
-    endpoints       = uris.match(/\/[\w\/\.]+/ig).map(m=>m.replace('}','')).filter(m=>m.indexOf('.json')>0);  // 从文档中提取接口地址
-    responseModel   = endpoints.map(e=>'Response'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json',''))  // 从接口地址生成返回值名
+function parseEndpoints(){
+    responseModel   = endpoints.map(e=>program.prefix+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')+'Model')  // 从接口地址生成返回值名
     methods         = endpoints.map(e=>'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
 }
 })().catch(console.log);
@@ -281,27 +288,27 @@ async function parseTemplate() {
     // ===================
     // gen http request (task) file
     // ===================
-    if(program.verbose) console.log("开始生成请求类");
-    let h_file      = getPath(out_task, `${modulename}.h`),
-        m_file      = getPath(out_task, `${modulename}.m`);
-    if(endpoints.length>methodArgs.length)
-        return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致, 但是入参可以多(有的接口不需要post->.json)
-    if(endpoints.length>methodTitles.length)
-        return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
-    if(endpoints.length<methodTitles.length)
-        console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
-    endpoints = endpoints.map((e,i)=>{
-        return {
-        "httpclient": httpclient,
-        "path": e,
-        "method": methods[i],
-        "model": responseModel[i],
-        "des": methodTitles[i].replace(/\s/ig, ''),
-        "args": methodArgs[i]
-    }
-    });
-    await renderFile(h_file, eval(h_task)).catch(console.log);
-    await renderFile(m_file, eval(m_task)).catch(console.log);
+    // if(program.verbose) console.log("开始生成请求类");
+    // let h_file      = getPath(out_task, `${modulename}.h`),
+    //     m_file      = getPath(out_task, `${modulename}.m`);
+    // if(endpoints.length>methodArgs.length)
+    //     return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致, 但是入参可以多(有的接口不需要post->.json)
+    // if(endpoints.length>methodTitles.length)
+    //     return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
+    // if(endpoints.length<methodTitles.length)
+    //     console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
+    // endpoints = endpoints.map((e,i)=>{
+    //     return {
+    //     "httpclient": httpclient,
+    //     "path": e,
+    //     "method": methods[i],
+    //     "model": responseModel[i],
+    //     "des": methodTitles[i].replace(/\s/ig, ''),
+    //     "args": methodArgs[i]
+    // }
+    // });
+    // await renderFile(h_file, eval(h_task)).catch(console.log);
+    // await renderFile(m_file, eval(m_task)).catch(console.log);
 
     console.log('=====END=====')
 }

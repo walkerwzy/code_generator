@@ -6,7 +6,7 @@
 //  Copyright © ${(new Date()).getFullYear()} ${copyright}  All rights reserved.
 // 
 
-#import <PMRESTLib/PMRESTLib.h>
+#import <Foundation/Foundation.h>
 ${model.props.filter(m=>m.model).map(prop =>
 `#import "${prop.model}.h"
 `).join('')}
