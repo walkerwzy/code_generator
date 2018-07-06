@@ -107,7 +107,7 @@ function parseResponseTable(table, classMeta) {
             return parseResponseTable(table, complexProperty);
         }
         let tds = $(tr).children('td');
-        let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
+        let nameMatch = /[a-z0-9]+/ig.exec(tds.eq(0).text());
         if(!nameMatch) return;                                // 第一格非英文则理解为不是属性名
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
         // 记录属性名, 类型, 注释等
@@ -117,11 +117,12 @@ function parseResponseTable(table, classMeta) {
         if(!ptype || ptype.length == 0) 
             return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
-        let isArray = ptype.toLowerCase() == 'list';
+        let isArray = ['list', 'array'].includes(ptype.toLowerCase());
         if(isComplexObj) {
             // data 下面跟的表格如果是空(只有 head), 表示没有这个字段
-            let nextTable = $(table).children("tbody").children("tr").eq(i+1);
-            if($(nextTable).find(".layui-table").children("tbody").children("tr").length == 0) return;
+            // 现在文档没有 data 为空的情况, 就不浪费资源了
+            // let nextTable = $(table).children("tbody").children("tr").eq(i+1);
+            // if($(nextTable).find(".layui-table").children("tbody").children("tr").length == 0) return;
             ptype = program.prefix + typeFactory.next().value + "Model";
             console.log(`${pname} ==> ${ptype}`);
         }
@@ -193,7 +194,11 @@ async function readFile(filename) {
  return await fs.readFile(fullpath, 'utf8').catch(console.log);
 }
 
-// 是否对象或数组(简单数组不算)
+/**
+ * 是否对象或数组(简单数组不算)
+ * @param keystr: 属性名 (没有用到?)
+ * @param typestr: 类型名
+ */
 function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
     let isPrimaryType = ['int', 'int32', 'int64', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'float', 'double'].includes(typestr),
@@ -223,6 +228,9 @@ function assumeVarType(str, isArray, model) {
     else model_type = model + " *";
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
     model_type = model_type.replace(' *','');
+    if(str == 'ihospitalList') {
+        console.log(var_type, model_type)
+    }
     return [var_type, model_type];
 }
 
