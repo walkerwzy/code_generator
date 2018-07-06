@@ -8,22 +8,19 @@
 
 #import "${modulename}.h"
 ${endpoints.map(e=>`
-#define kEndpoint${e.method} @"${e.path}" // ${e.des}`).join('')}
+#define k${e.method.replace('task','')} @"${e.path}" // ${e.des}`).join('')}
 
 @implementation ${modulename}
 
-PMTASK_INIT_SINGLETON
-
-+ (NSDictionary<NSString *,id> *)modelClassesByResourcePath {
-    return @{
-    	${endpoints.map(e=>
-			`kEndpoint${e.method}: [${e.model} class],
-			`).join('').slice(0,-1)}
-             };
-}
-
 ${endpoints.map(e=>
-`PMTASK_EXPORT_IMP(${e.method}, ${e.model})
-`).join('').trim()}
+`+ (void)${e.method}:(NSDictionary *)params success:(void (^)(${e.model} * _Nullable))success failure:(void (^)(NSError * _Nullable))failure {
+    WYTask *task = [[WYTask alloc] initWithURL:k${e.method.replace('task','')}];
+    task.needAutomaticLoadingView = YES;
+    [task startWithParams:params success:^(NSDictionary *response) {
+        success([${e.model} wy_modelWithDictionary:response]);
+    } failure:^(NSError *error) {
+        failure(error);
+    }];
+}`).join('').trim()}
 
 @end`

@@ -1,4 +1,11 @@
 `//
+// __        __      ____
+// \\ \\      / /__   / ___|_ __ ___  _   _ _ __
+//  \\ \\ /\\ / / _ \\ | |  _| '__/ _ \\| | | | '_ \\
+//   \\ V  V /  __/ | |_| | | | (_) | |_| | |_) |
+//    \\_/\\_/ \\___|  \\____|_|  \\___/ \\__,_| .__/ 
+//                                       |_|
+//
 //  ${modulename}.h
 //  ${projectname}
 // 
@@ -6,12 +13,13 @@
 //  Copyright © ${(new Date()).getFullYear()} ${copyright}  All rights reserved.
 // 
 
-#import <PMRESTLib/PMRESTLib.h>
+#import <Foundation/Foundation.h>
 ${endpoints.map(m=>
 `#import "${m.model}.h"
 `).join('')}
 
 @interface ${modulename} : ${httpclient}
+
 ${
 endpoints.map(e=>`
 /**
@@ -20,6 +28,6 @@ endpoints.map(e=>`
 ${e.args.map(p=>
 ` * @param ${p}
 `).join('')} */
-- (NSURLSessionDataTask *)${e.method}:(NSDictionary *)params completion:(void (^)(${e.model} *response, NSError *error))completion;`).join('').trim()}
++ (void)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nonnull)(${e.model} * _Nullable response))success failure:(void (^ _Nullable)(NSError * _Nullable error))failure;`).join('').trim()}
 
 @end`

@@ -7,11 +7,10 @@ offset=1
 debug=true
 verbose=false
 prefix='WYMTCPM'
-modulename='taskDoctorInfo'
+modulename='taskSetupFee'
 httpclient='NSObject'
 models=(
-#医生详情
-'DoctorProfile,DoctorIHospital,DoctorVO'
+
 )
 
 for model in ${models[@]}; do

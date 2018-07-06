@@ -4,9 +4,9 @@ let fs = require('fs-extra'),
     path = require('path'),
     program = require('commander'),
     cheerio = require('cheerio'),
-    strlist = 'list<string>',
-    intlist = 'list<int>',
-    floatlist = 'list<float>',
+    strlist = 'array<string>',
+    intlist = ['array<int>','array<integer>', 'array<int32>', 'array<int64>'],
+    floatlist = 'array<float>',
     $;
 
 // 命令行参数
@@ -39,7 +39,7 @@ program
     .option('--debug', 'the output.json file will gen', false)
     .option('--verbose', 'show buzz logs', false)
     .parse(process.argv);
-let baseClasses     = program.base.length || ['NSObject'],// ['PMLResponseModelBaseHD', 'PMLModelBase'],
+let baseClasses     = program.base.length || ['NSObject', 'NSObject'],// ['PMLResponseModelBaseHD', 'PMLModelBase'],
     classCollect    = [...program.classes, ...program.batchclasses],
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
     tableoffset     = program.tableoffset,
@@ -58,26 +58,22 @@ let content         = await readFile(program.file),
     $               = cheerio.load(content);
 
 // 移除最后一个表格
-let table_count = $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").length;
-$(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(table_count-1, table_count).remove();
-console.log($(".layui-tab .layui-tab-content .layui-tab-item .layui-table").length);
+let table_count = $(".layui-tab-content .layui-table").length;
+$(".layui-tab .layui-tab-content .layui-table").slice(table_count-1, table_count).remove();
 // 解析路径
 endpoints = [$(".layui-tab-title .layui-this").text().replace(/^\w*/,'')];
 // 根据路径生成方法名, 响应类名
 parseEndpoints();
+// 解析文本, 得到方法标题列表
+methodTitles = $(".layui-tab-content").text().match(/description\s.*/ig).map(e=>e.replace(/description\s*/ig,''));
 // 解析文本, 移除不需要的 table (目前只支持移除从0开始的)
 if(tableoffset>0) $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(0, tableoffset).remove();
-// 解析文本, 得到方法标题列表
-$(".wiki-content *:has(.toc-macro)").remove(); // 移除目录
-// $(".wiki-content h1[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
-// $(".wiki-content h2[id*=id-]").each((i,m) => methodTitles.push($(m).text()));
-methodTitles = $(".layui-tab .layui-tab-content").text().match(/description\s.*/ig).map(e=>e.replace(/description\s*/ig,''));
 
 // 解析请求和响应的 Table
-$(".wiki-content>.table-wrap").each((i, table) => {
+$(".layui-tab-content .layui-tab-item > .layui-table").each((i, table) => {
     if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
     parseResponseTable(table);  // => 得到实体类数组
-});  
+});
 if(program.debug) await fs.writeJson('./output.json', entities).catch(console.log);
 // 应用模板
 await parseTemplate().catch(console.log);
@@ -100,15 +96,15 @@ function parseResponseTable(table, classMeta) {
         hasIdKey    = false,  // 该表格里如果有 id 键会打标, 因为 id 在 OC 里是关键字
         props       = [],
         complexProperty; // 如果当前行表示是个对象或数据, 把元数据保存, 用来生成子表格对应的类
-    $(table).children(".confluenceTable").children("tbody").children("tr")
+    $(table).children("tbody").children("tr")
     .each((i,tr) => {
         if($(tr).text().trim().length == 0) return; // 空行不处理
         if(rowIsTable){
             // 进入这个方法,说明上一行标识这一行是子类
             rowIsTable = false;
-            // return parseResponseTable($(tr).children("td").children(".table-wrap"), complexProperty);
-            // 有时候文档把子表格写在了第二个 td 里...
-            return parseResponseTable($(tr).find(".table-wrap").eq(0), complexProperty);
+            let table = $(tr).find(".layui-table").eq(0);
+            if($(table).children("tbody").children("tr").length == 0) return; // 空表格不处理
+            return parseResponseTable(table, complexProperty);
         }
         let tds = $(tr).children('td');
         let nameMatch = /[a-z]+/ig.exec(tds.eq(0).text());
@@ -122,8 +118,13 @@ function parseResponseTable(table, classMeta) {
             return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
         let isArray = ptype.toLowerCase() == 'list';
-        if(isComplexObj) ptype = typeFactory.next().value;
-        if(isComplexObj) console.log(`${pname} ==> ${ptype}`);
+        if(isComplexObj) {
+            // data 下面跟的表格如果是空(只有 head), 表示没有这个字段
+            let nextTable = $(table).children("tbody").children("tr").eq(i+1);
+            if($(nextTable).find(".layui-table").children("tbody").children("tr").length == 0) return;
+            ptype = program.prefix + typeFactory.next().value + "Model";
+            console.log(`${pname} ==> ${ptype}`);
+        }
         if(ptype == "object") 
             return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
         if(!ptype || ptype.length == 0) 
@@ -156,9 +157,9 @@ function parseResponseTable(table, classMeta) {
      }
 function parseRequestTable(table) {
     let param_des = [];
-    $(table).children(".confluenceTable").children("tbody").children("tr")
+    $(table).children("tbody").children("tr")
     .each((i, tr) => {
-        if(i<2) return;
+        // if(i<2) return;
         let tds     = Array.from($(tr).children('td'));
         if($(tds[0]).text() == '业务参数' || $(tds[0]).text().trim().length == 0) return;
         let propdes = tds.map(t=>$(t).text().replace(/[\s]/ig, '')).join(' ');
@@ -169,12 +170,14 @@ function parseRequestTable(table) {
 
 // 根据解析出路径, 响应类型, 和参数数组
 function parseEndpoints(){
-    responseModel   = endpoints.map(e=>program.prefix+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')+'Model')  // 从接口地址生成返回值名
-    methods         = endpoints.map(e=>'method'+e.replace(/\/(\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
+    // 注意: 这里是针对具体 URL 的样式进行更改的, 不同项目请仔细更改
+    responseModel   = endpoints.map(e=>program.prefix+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')+'ResponseModel')  // 从接口地址生成返回值名
+    methods         = endpoints.map(e=>'task'+program.prefix+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
 }
 })().catch(console.log);
 
 // 响应类类名生成器
+// 本实现中不使用, 所有类名由用户定义, 不由路径自动生成
 function* responseModelGenerator() {
     yield* responseModel;
 }
@@ -193,8 +196,8 @@ async function readFile(filename) {
 // 是否对象或数组(简单数组不算)
 function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
-    let isPrimaryType = ['int', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'float', 'double'].includes(typestr),
-        isPrimaryList = [intlist, strlist].includes(typestr);
+    let isPrimaryType = ['int', 'int32', 'int64', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'float', 'double'].includes(typestr),
+        isPrimaryList = [...intlist, strlist, floatlist].includes(typestr);
     return !isPrimaryType && !isPrimaryList;  // 不再考虑用户定义, 发现非简单类型都默认下一行是子表
 }
 
@@ -251,6 +254,7 @@ async function parseTemplate() {
         author      = program.author,
         modulename  = program.module,
 		httpclient  = program.clientbase,
+        prefix      = program.prefix,
         model_path  = "templates/model",
         task_path   = "templates/httpclient",
         // 模板内容
@@ -288,27 +292,27 @@ async function parseTemplate() {
     // ===================
     // gen http request (task) file
     // ===================
-    // if(program.verbose) console.log("开始生成请求类");
-    // let h_file      = getPath(out_task, `${modulename}.h`),
-    //     m_file      = getPath(out_task, `${modulename}.m`);
-    // if(endpoints.length>methodArgs.length)
-    //     return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致, 但是入参可以多(有的接口不需要post->.json)
-    // if(endpoints.length>methodTitles.length)
-    //     return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
-    // if(endpoints.length<methodTitles.length)
-    //     console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
-    // endpoints = endpoints.map((e,i)=>{
-    //     return {
-    //     "httpclient": httpclient,
-    //     "path": e,
-    //     "method": methods[i],
-    //     "model": responseModel[i],
-    //     "des": methodTitles[i].replace(/\s/ig, ''),
-    //     "args": methodArgs[i]
-    // }
-    // });
-    // await renderFile(h_file, eval(h_task)).catch(console.log);
-    // await renderFile(m_file, eval(m_task)).catch(console.log);
+    if(program.verbose) console.log("开始生成请求类");
+    let h_file      = getPath(out_task, `${modulename}.h`),
+        m_file      = getPath(out_task, `${modulename}.m`);
+    if(endpoints.length>methodArgs.length)
+        return console.log("接口数量与入参数量不一致的", endpoints, methodArgs);  // 接口由解析文本来的, 入参描述由解析表格来的, 可能不一致, 但是入参可以多(有的接口不需要post->.json)
+    if(endpoints.length>methodTitles.length)
+        return console.log("接口数量与接口标题数量不一致", endpoints, methodTitles); // 分别由解析文本而来, 可能不一致
+    if(endpoints.length<methodTitles.length)
+        console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
+    endpoints = endpoints.map((e,i)=>{
+        return {
+        "httpclient": httpclient,
+        "path": e,
+        "method": methods[i],
+        "model": responseModel[i],
+        "des": methodTitles[i].replace(/\s/ig, ''),
+        "args": methodArgs[i]
+    }
+    });
+    await renderFile(h_file, eval(h_task)).catch(console.log);
+    await renderFile(m_file, eval(m_task)).catch(console.log);
 
     console.log('=====END=====')
 }
