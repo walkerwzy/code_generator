@@ -29,6 +29,6 @@ endpoints.map(e=>`
 ${e.args.map(p=>
 ` * @param ${p}
 `).join('')} */
-+ (WYTask *)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nonnull)(${e.model} * _Nullable response))success failure:(void (^ _Nullable)(NSError * _Nullable error))failure;`).join('').trim()}
++ (WYTask *_Nullable)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nonnull)(${e.model} * _Nullable response))success failure:(void (^ _Nullable)(NSError * _Nullable error))failure;`).join('').trim()}
 
 @end`
