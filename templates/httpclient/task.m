@@ -13,7 +13,7 @@ ${endpoints.map(e=>`
 @implementation ${modulename}
 
 ${endpoints.map(e=>
-`+ (void)${e.method}:(NSDictionary *)params success:(void (^)(${e.model} * _Nullable))success failure:(void (^)(NSError * _Nullable))failure {
+`+ (WYTask *)${e.method}:(NSDictionary *)params success:(void (^)(${e.model} * _Nullable))success failure:(void (^)(NSError * _Nullable))failure {
     WYTask *task = [[WYTask alloc] initWithURL:k${e.method.replace('task','')}];
     task.needAutomaticLoadingView = YES;
     [task startWithParams:params success:^(NSDictionary *response) {

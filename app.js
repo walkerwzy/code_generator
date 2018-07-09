@@ -173,7 +173,7 @@ function parseRequestTable(table) {
 function parseEndpoints(){
     // 注意: 这里是针对具体 URL 的样式进行更改的, 不同项目请仔细更改
     responseModel   = endpoints.map(e=>program.prefix+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')+'ResponseModel')  // 从接口地址生成返回值名
-    methods         = endpoints.map(e=>'task'+program.prefix+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
+    methods         = endpoints.map(e=>'task'+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
 }
 })().catch(console.log);
 
