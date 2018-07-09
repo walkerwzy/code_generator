@@ -15,7 +15,7 @@ static NSString *const k${e.method.replace('task','')} = @"${e.path}"; // ${e.de
 ${endpoints.map(e=>
 `+ (WYTask *)${e.method}:(NSDictionary *)params success:(void (^)(${e.model} * _Nullable))success failure:(void (^)(NSError * _Nullable))failure {
     WYTask *task = [[WYTask alloc] initWithURL:k${e.method.replace('task','')}];
-    task.needAutomaticLoadingView = YES;
+    task.needAutomaticLoadingView = NO;
     [task startWithParams:params success:^(NSDictionary *response) {
         success([${e.model} wy_modelWithDictionary:response]);
     } failure:^(NSError *error) {
