@@ -10,8 +10,8 @@ prefix='WYMTCPM'
 modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
-#医生详情
-'DoctorProfile,DiseaseDO,IHospitalDO,DoctorDO'
+#互联网医院二维码
+'HospitalQR'
 )
 
 for model in ${models[@]}; do

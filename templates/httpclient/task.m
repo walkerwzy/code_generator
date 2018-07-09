@@ -21,6 +21,7 @@ ${endpoints.map(e=>
     } failure:^(NSError *error) {
         failure(error);
     }];
+    return task;
 }`).join('').trim()}
 
 @end`
