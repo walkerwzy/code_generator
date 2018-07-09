@@ -14,6 +14,7 @@
 // 
 
 #import <Foundation/Foundation.h>
+#import <WYTask/WYTask.h>
 ${endpoints.map(m=>
 `#import "${m.model}.h"
 `).join('')}
