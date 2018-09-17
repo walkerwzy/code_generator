@@ -1,17 +1,17 @@
 #!/bin/bash
 author='walker'
-projectname='WYMTCPersonalModule'
+projectname='WYMTCPaitentModule'
 passkeys=''
 fileuri='/Users/walker/Desktop/index.html'
 offset=1
 debug=true
 verbose=false
-prefix='WYMTCPM'
+prefix='WYMTCPT'
 modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
 #医生详情
-'DoctorProfile,DepartmentDO,DiseaseDO,IHospitalDO,DoctorDO'
+'PatientDetailDO,PatientHealthInfoDO,PatientInfoDO,PatientLifeHabitInfoDO'
 )
 
 for model in ${models[@]}; do

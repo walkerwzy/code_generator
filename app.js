@@ -64,6 +64,7 @@ $(".layui-tab .layui-tab-content .layui-table").slice(table_count-1, table_count
 endpoints = [$(".layui-tab-title .layui-this").text().replace(/^\w*/,'')];
 // 根据路径生成方法名, 响应类名
 parseEndpoints();
+console.log(endpoints);
 // 解析文本, 得到方法标题列表
 methodTitles = $(".layui-tab-content").text().match(/description\s.*/ig).map(e=>e.replace(/description\s*/ig,''));
 // 解析文本, 移除不需要的 table (目前只支持移除从0开始的)
