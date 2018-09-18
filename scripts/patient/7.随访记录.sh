@@ -11,7 +11,7 @@ modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
 #问诊详情
-'ConsultDrugListDO,ConsultDrugListItem,ConsultInfoDO'
+'FollowUpListItem'
 )
 
 for model in ${models[@]}; do

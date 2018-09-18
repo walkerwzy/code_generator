@@ -11,7 +11,7 @@ modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
 #用药历史
-'DrugHistoryDO'
+'DrugHistoryListItem'
 )
 
 for model in ${models[@]}; do

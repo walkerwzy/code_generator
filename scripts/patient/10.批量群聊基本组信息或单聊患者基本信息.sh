@@ -10,8 +10,8 @@ prefix='WYMTCPT'
 modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
-#问诊详情
-'ConsultDrugListDO,ConsultDrugListItem,ConsultInfoDO'
+#获取患者分组总数、第一个分组患者信息
+'DoctorMobileDO'
 )
 
 for model in ${models[@]}; do
