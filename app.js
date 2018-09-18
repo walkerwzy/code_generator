@@ -202,7 +202,7 @@ async function readFile(filename) {
  */
 function isObjectOrArray(keystr, typestr) {
     typestr = typestr.toLowerCase().trim();
-    let isPrimaryType = ['int', 'int32', 'int64', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'float', 'double'].includes(typestr),
+    let isPrimaryType = ['int', 'int32', 'int64', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'date-time', 'float', 'double'].includes(typestr),
         isPrimaryList = [...intlist, strlist, floatlist].includes(typestr);
     return !isPrimaryType && !isPrimaryList;  // 不再考虑用户定义, 发现非简单类型都默认下一行是子表
 }
@@ -220,7 +220,7 @@ function assumeVarType(str, isArray, model) {
     let l_str = str.toLowerCase(), 
         model_type = str, // 类型 
         var_type = str;   // 字段
-    if(['string','date'].includes(l_str)) model_type = "NSString *";
+    if(['string','date', 'date-time'].includes(l_str)) model_type = "NSString *";
     else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else if(['float', 'dobule'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat";
