@@ -10,8 +10,8 @@ prefix='WYMTCPT'
 modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
-#用药历史
-'DrugHistoryDO'
+#根据患者姓名模糊搜索患者
+'PatientListBySearchList'
 )
 
 for model in ${models[@]}; do
