@@ -2,7 +2,7 @@
 author='walker'
 projectname='WYMTCPaitentModule'
 passkeys=''
-fileuri='/Users/Evan/Desktop/index.html'
+fileuri='/Users/walker/Desktop/index.html'
 offset=1
 debug=true
 verbose=false
@@ -11,7 +11,7 @@ modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
 #返回问诊接诊医生信息
-'ConsultDoctorList','ConsultDoctorDO'
+'MedicalRecordListItem,ConsultDoctorDO'
 )
 
 for model in ${models[@]}; do

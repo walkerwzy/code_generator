@@ -10,8 +10,8 @@ prefix='WYMTCPT'
 modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
-#问诊详情
-'PatientGroupInfo,PatientGroupListItem'
+#电话回拨
+''
 )
 
 for model in ${models[@]}; do

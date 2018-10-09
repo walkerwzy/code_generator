@@ -2,7 +2,7 @@
 author='walker'
 projectname='WYMTCPaitentModule'
 passkeys=''
-fileuri='/Users/Evan/Desktop/index.html'
+fileuri='/Users/walker/Desktop/index.html'
 offset=1
 debug=true
 verbose=false

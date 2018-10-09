@@ -8,7 +8,7 @@
 
 #import "${modulename}.h"
 ${endpoints.map(e=>`
-static NSString *const k${e.method.replace('task','')} = @"${e.path}"; // ${e.des}`).join('')}
+static NSString *const k${e.method.replace('task','')} = @"${e.path}.json"; // ${e.des}`).join('')}
 
 @implementation ${modulename}
 

@@ -10,8 +10,8 @@ prefix='WYMTCPT'
 modulename='taskDoctorInfo'
 httpclient='NSObject'
 models=(
-#获取医生接听手机号
-'DoctorMobileDO'
+#批量拉取单聊患者信息、或者是群聊组信息
+'DoctorGroupListDO,DoctorGroupListItem,GroupPatientInfoListItem'
 )
 
 for model in ${models[@]}; do
