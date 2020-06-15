@@ -10,7 +10,7 @@ modulename='taskCommon'
 httpclient='PMLRESTBaseDoctor'
 models=(
 #地区列表
-modelAreaListItem
+modelAreaListItem,modelAreaJuniorDOListItem
 #获取图片验证码
 #医生其他端获取手机验证码
 #医生APP获取手机验证码
