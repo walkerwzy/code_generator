@@ -1,12 +1,4 @@
-`//
-// __        __      ____
-// \\ \\      / /__   / ___|_ __ ___  _   _ _ __
-//  \\ \\ /\\ / / _ \\ | |  _| '__/ _ \\| | | | '_ \\
-//   \\ V  V /  __/ | |_| | | | (_) | |_| | |_) |
-//    \\_/\\_/ \\___|  \\____|_|  \\___/ \\__,_| .__/ 
-//                                       |_|
-//
-//  ${model.className}.m
+`//  ${model.className}.m
 //  ${projectname}
 // 
 //  Created by ${author} on ${(new Date()).toLocaleDateString()}.
@@ -17,5 +9,17 @@
 
 @implementation ${model.className}
 
+${[0].map(_ => { if(model.hasIdKey) return `  // 模板字符串内不能直接写if，但map里可以写，所以包一下
++(NSDictionary*)mj_replacedKeyFromPropertyName{
+    return @{@"theId":@"id"};
+}`;
+}).join('')}
+
++(NSDictionary *)mj_objectClassInArray{
+    return @{${model.props.map(prop => { if(prop.isObject && prop.isArray) return `
+		@"${prop.name}": @"${prop.innerType}",`; else return '';
+}).join('')}
+    };
+}
 
 @end`

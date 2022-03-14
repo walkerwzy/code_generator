@@ -4,9 +4,9 @@ let fs = require('fs-extra'),
     path = require('path'),
     program = require('commander'),
     cheerio = require('cheerio'),
-    strlist = 'array<string>',
-    intlist = ['array<int>','array<integer>', 'array<int32>', 'array<int64>'],
-    floatlist = 'array<float>',
+    strlist = 'string[]',
+    intlist = ['int[]','integer[]', 'int32[]', 'int64[]'],
+    floatlist = 'float[]',
     $;
 
 // 命令行参数
@@ -48,6 +48,7 @@ let baseClasses     = program.base.length || ['NSObject', 'NSObject'],// ['PMLRe
 let entities        = [], // 实体类对应的数组
     methodArgs      = [], // 方法参数对应的数组
     endpoints       = [], // 接口请求地址数组
+    req_methods     = [], // 接口请求方式数组(get, post...)
     responseModel   = [], // 接口返回值类型数组 => 完全由 endpoint 转化而来
     methods         = []; // 接口对应方法名数组 => 完全由 endpoint 转化而来 {name: param:}
     methodTitles    = []; // 接口标题数组
@@ -58,104 +59,143 @@ let content         = await readFile(program.file),
     $               = cheerio.load(content);
 
 // 移除最后一个表格
-let table_count = $(".layui-tab-content .layui-table").length;
-$(".layui-tab .layui-tab-content .layui-table").slice(table_count-1, table_count).remove();
+let table_count = 1; //$(".layui-tab-content .layui-table").length;
+// $(".layui-tab .layui-tab-content .layui-table").slice(table_count-1, table_count).remove();
 // 解析路径
-endpoints = [$(".layui-tab-title .layui-this").text().replace(/^\w*/,'')];
+endpoints = [$(".panel-view .ant-row").eq(2).find(".colValue > .colValue").not(".tag-method").text()];//.replace(/^\w*/,'')];
+// 解析method: get/post
+req_methods = [$(".panel-view .ant-row").eq(2).find(".tag-method").text()];//.replace(/^\w*/,'')];
 // 根据路径生成方法名, 响应类名
 parseEndpoints();
-console.log(endpoints);
+console.log('endpoints:', endpoints);
+console.log('request_methods:', req_methods);
+console.log('response_types:', responseModel);
 // 解析文本, 得到方法标题列表
-methodTitles = $(".layui-tab-content").text().match(/description\s.*/ig).map(e=>e.replace(/description\s*/ig,''));
+methodTitles = [$('.panel-view .ant-row').first().find('.colName').text()];
 // 解析文本, 移除不需要的 table (目前只支持移除从0开始的)
-if(tableoffset>0) $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(0, tableoffset).remove();
-
+// if(tableoffset>0) $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(0, tableoffset).remove();
+console.log('titles:', methodTitles);
 // 解析请求和响应的 Table
-$(".layui-tab-content .layui-tab-item > .layui-table").each((i, table) => {
+$(".ant-table-body > table").each((i, table) => {
     if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
-    parseResponseTable(table);  // => 得到实体类数组
+    parseResponseTable(table, Math.floor(i/2));  // => 得到实体类数组
 });
 if(program.debug) await fs.writeJson('./output.json', entities).catch(console.log);
 // 应用模板
 await parseTemplate().catch(console.log);
 // 完成
-if(program.verbose) console.log("done!");
+console.log("done!");
 
-function parseResponseTable(table, classMeta) {
-    let modelName   = "",
+/**
+ * 生成：
+ * [
+ *  {
+ *    "className": "LA****Model",
+ *    "name": "uuid",
+ *    "des": "订单ID"，
+ *    "type": "NSString *",
+ *    "isArray": false,
+ *    "hasIdKey": false,
+ *    "baseName": NSObject,  // 有的项目有继承别的根实体类，比如mantle
+ *    "isRoot": ture  // 标识是不是返回对象里的子对象 -> 对应request的返回对象 弃用
+ *    "level": 1  // 下面会用level==1来判断isRoot
+ *  }
+ * ]
+ * 1, level-0在本项目中无需处理，所以直接硬编码从1开始
+ *    要兼容的话，就把level-0的字段放到passKey的列表里也可以，有空再说
+ * 2, 因为去掉了level-0，所以如果返的就是单值（直接返在data字段，暂未支持）
+ */
+ function parseResponseTable(table, index) {
+    let modelNames  = [responseModel[index]], // 按先后顺序出现的子类名（一旦一个子类处理完了，会从该表移除）
         baseName    = baseClasses[0],
-        isRoot      = true;     // 子类如果需要继承不同的基类, 则利用此标识
-    if(classMeta) {
-        // 有classMeta, 说明是一个子类
-        modelName   = classMeta["model"];
-        baseName    = baseClasses[1];
-        isRoot      = false;
-    }else{
-        modelName   = respFactory.next().value;
-    }
-    let rowIsTable  = false,
-        hasIdKey    = false,  // 该表格里如果有 id 键会打标, 因为 id 在 OC 里是关键字
-        props       = [],
-        complexProperty; // 如果当前行表示是个对象或数据, 把元数据保存, 用来生成子表格对应的类
-    $(table).children("tbody").children("tr")
+        props       = []
+    $(table).find("tbody").children("tr")
     .each((i,tr) => {
         if($(tr).text().trim().length == 0) return; // 空行不处理
-        if(rowIsTable){
-            // 进入这个方法,说明上一行标识这一行是子类
-            rowIsTable = false;
-            let table = $(tr).find(".layui-table").eq(0);
-            if($(table).children("tbody").children("tr").length == 0) return; // 空表格不处理
-            return parseResponseTable(table, complexProperty);
-        }
+        if($(tr).hasClass("ant-table-row-level-0") || $(tr).hasClass("ant-table-row-level-")) return;
         let tds = $(tr).children('td');
         let nameMatch = /[a-z0-9]+/ig.exec(tds.eq(0).text());
         if(!nameMatch) return;                                // 第一格非英文则理解为不是属性名
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
+
+        let level = getRowLevel(tr);
+        // 比如：当前是1层，但是modelNames有两个，说明之前处理过子层，并且已经处理完了，那么就移除多余的名称
+        if(level < modelNames.length) modelNames.pop();
         // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
-        let ptype = tds.eq(2).text().trim() || 'object';      // 没有足够的列, 说明下一行是一个对象, 被合并单元格了, 如果是数组会标明是 list 的
-        let pdes  = tds.eq(3).text().trim() || "";
+        let ptype = tds.eq(1).text().replace(/[\s\n]/g, '');
         if(!ptype || ptype.length == 0) 
             return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
-        let isComplexObj = isObjectOrArray(nameMatch[0], ptype);     // 包含预设子类关键字, 理解为复杂对象
-        let isArray = ['list', 'array'].includes(ptype.toLowerCase());
+        let isArray = ['list', 'array'].includes(ptype.toLowerCase()) || ptype.indexOf('[]') >= 0;
+        let isComplexObj = isObjectOrArray(nameMatch[0], ptype); // 包含预设子类关键字, 理解为复杂对象
         if(isComplexObj) {
-            // data 下面跟的表格如果是空(只有 head), 表示没有这个字段
-            // 现在文档没有 data 为空的情况, 就不浪费资源了
-            // let nextTable = $(table).children("tbody").children("tr").eq(i+1);
-            // if($(nextTable).find(".layui-table").children("tbody").children("tr").length == 0) return;
-            ptype = program.prefix + typeFactory.next().value + "Model";
-            console.log(`${pname} ==> ${ptype}`);
+            if(modelNames.length <= level) {
+                ptype = typeFactory.next().value; 
+                modelNames.push(ptype);            // 也添加到子类表，子类按顺序从里面取名字
+            }
+            ptype = modelNames[level];
         }
+        // if(program.verbose) console.log(`row: ${i}, level: ${level}, name: ${pname}, isObject: ${isComplexObj}`, modelNames)
+        if(isComplexObj) console.log(`${pname} ==> ${ptype}`);
         if(ptype == "object") 
-            return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(2).html(), isComplexObj);
+            return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(4).html(), isComplexObj);
         if(!ptype || ptype.length == 0) 
             return console.log("类名个数不符", $(tr).text());  // 生成器没生成类名, 说明数量给少了
-        if(ptype == 'list') 
+        if(ptype == 'list' || (ptype.indexOf('[]') >= 0  && isComplexObj)) 
             return console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isComplexObj)
         let assume_type = assumeVarType(ptype, isArray, ptype);
+        let pdes = tds.eq(4).text().trim() + ' ' + tds.eq(2).text().trim() + ' ' + tds.eq(5).text().trim(); 
         let prop = {
             "name": pname, 
-            "des": tds.eq(1).text().replace(/[\s\/\*]/ig,''), 
+            "des": pdes, 
+            "className": modelNames[level-1],
+            "baseName": isComplexObj,
             "type": assume_type[0],
-            "isArray": isArray
+            "innerType": assume_type[1],
+            "isArray": isArray,
+            "isObject": isComplexObj,
+            "level": level,
+            "hasIdKey": false,
         };
         if(pname == 'id') {
-            prop["name"] = "recordId";
-            hasIdKey = true;
-        }
-        if(pdes) {
-            prop["des"] = prop["des"] + " " + pdes;
-        }
-        if(isComplexObj){
-            prop["model"] = assume_type[1];
-            rowIsTable = true;
-            complexProperty = prop;
+            prop["name"] = "theId";  // TODO: 也改成可配置的
+            prop["hasIdKey"] = true;
         }
         props.push(prop);
        }); // end of basetable > tr > foreach
-        entities.push({"isRoot": isRoot, "hasIdKey": hasIdKey, "className": modelName,"baseName": baseName, "props": props});
-        if(program.verbose) console.log("生成模型:", modelName) 
+
+        // 得到字典所有key的方法：Object.keys(dict)
+        // 得到字典所有key, value的方法： Object.entries(dict).map(([k,v],i) => k)
+        // 根据字段过滤：var filtered = Object.fromEntries(Object.entries(dict).filter(([k,v]) => v>1));
+        // 或者用assign和spread syntax:
+        // var filtered = Object.assign({}, ...
+        // Object.entries(dict).filter(([k,v]) => v>1).map(([k,v]) => ({[k]:v}))
+
+        // remove duplicates
+        // let chars = ['A', 'B', 'A', 'C', 'B'];
+        // let uniqueChars = [...new Set(chars)];
+
+        if(program.verbose) console.log(props);
+        // 提取公共字段
+        // 先提取类别
+        let types = [... new Set(props.map(m => m["className"]))];
+        types.forEach(m => entities.push({"className": m, props: []}));
+        props.forEach(m => {
+            let ents = entities.filter(e => e["className"] == m["className"]);
+            if(ents.length == 0) return;
+            let ent = ents[0];
+            ent["isRoot"] = m["level"] == 1;
+            ent["hasIdKey"] = m["hasIdKey"],
+            ent["baseName"] = m["baseName"],
+            ent["props"].push({
+                "name": m["name"],
+                "des": m["des"],
+                "type": m["type"],
+                "innerType": m["innerType"],
+                "isArray": m["isArray"],
+                "isObject": m["isObject"]
+            })
+        });
      }
 function parseRequestTable(table) {
     let param_des = [];
@@ -163,19 +203,32 @@ function parseRequestTable(table) {
     .each((i, tr) => {
         // if(i<2) return;
         let tds     = Array.from($(tr).children('td'));
-        if($(tds[0]).text() == '业务参数' || $(tds[0]).text().trim().length == 0) return;
-        let propdes = tds.map(t=>$(t).text().replace(/[\s]/ig, '')).join(' ');
+        // if($(tds[0]).text() == '业务参数' || $(tds[0]).text().trim().length == 0) return;
+        let propdes = tds.map(t=>$(t).text().replace(/[\s\n]/ig, '')).join(' ');
         param_des.push(propdes);
     });
     methodArgs.push(param_des);
 }
 
+function capitalizeFirstLetter([first, ...rest]) {
+  return first.toUpperCase() + rest.join('');
+}
+
 // 根据解析出路径, 响应类型, 和参数数组
 function parseEndpoints(){
     // 注意: 这里是针对具体 URL 的样式进行更改的, 不同项目请仔细更改
-    responseModel   = endpoints.map(e=>program.prefix+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')+'ResponseModel')  // 从接口地址生成返回值名
-    methods         = endpoints.map(e=>'task'+e.replace(/mtc/ig,'').replace(/[\/_](\w)/ig,underscoreToCamel).replace('.json','')); // 从接口地址生成方法名
+    responseModel = endpoints.map(e=>program.prefix+capitalizeFirstLetter(e.substring(e.lastIndexOf('/')+1,e.length)));
+    methods = endpoints.map(e=>'request'+capitalizeFirstLetter(e.substring(e.lastIndexOf('/')+1,e.length)));
 }
+
+function getRowLevel(row) {
+    let level = 1;
+    [...1e4+''].forEach((_, i) => { // 4层够了吧？（从level1开始，到level4)
+        if($(row).hasClass("ant-table-row-level-" + (i+1))) level = i+1; // 顺便用来跟类名数组的个数做比较，所以从1开始计数
+    });
+    return level;
+}
+
 })().catch(console.log);
 
 // 响应类类名生成器
@@ -189,6 +242,7 @@ function* classNameGenerator() {
     yield* classCollect;
 }
 
+
 async function readFile(filename) {
  let fullpath = path.resolve(filename); 
  if(program.verbose) console.log('start processing file:', fullpath);
@@ -201,8 +255,8 @@ async function readFile(filename) {
  * @param typestr: 类型名
  */
 function isObjectOrArray(keystr, typestr) {
-    typestr = typestr.toLowerCase().trim();
-    let isPrimaryType = ['int', 'int32', 'int64', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'date-time', 'float', 'double'].includes(typestr),
+    typestr = typestr.toLowerCase().replace(/[\s\n]/g, '');
+    let isPrimaryType = ['number', 'int', 'int32', 'int64', 'integer', 'long', 'string', 'bool', 'boolean', 'date', 'date-time', 'float', 'double'].includes(typestr),
         isPrimaryList = [...intlist, strlist, floatlist].includes(typestr);
     return !isPrimaryType && !isPrimaryList;  // 不再考虑用户定义, 发现非简单类型都默认下一行是子表
 }
@@ -212,7 +266,7 @@ function isObjectOrArray(keystr, typestr) {
  * @prarm str: 关键字
  * @param isArray: 是否数组类型
  * @param model: 自定义类型
- * @return 返回[变量类型, 模型类型]
+ * @return 返回[变量类型, 模型类型, 元素类型]
  * 比如 [NSArray<Doctor *> *, Doctor *]
  * 一个用于建模, 一个用于写属性
  */
@@ -222,7 +276,7 @@ function assumeVarType(str, isArray, model) {
         var_type = str;   // 字段
     if(['string','date', 'date-time'].includes(l_str)) model_type = "NSString *";
     else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL";
-    else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
+    else if(['int', 'integer', 'long', 'number'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
     else if(['float', 'dobule'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSNumber *> *";
@@ -269,14 +323,14 @@ async function parseTemplate() {
         // 模板内容
         h_content   = await getFileContent(model_path, 'template.h'),
         m_content1  = await getFileContent(model_path, 'template.m'),
-        m_content2  = await getFileContent(model_path, 'templatebase.m'),
+        m_content2  = await getFileContent(model_path, 'template.m'),  // 本项目实体类基类都是NSObject
         h_task      = await getFileContent(task_path, 'task.h'),
         m_task      = await getFileContent(task_path, 'task.m');
     let out_model   = "output_model",
         out_task    = "output_task";
     await fs.emptyDir(out_model); // 创建/清空输出文件夹
     await fs.emptyDir(out_task); // 创建/清空输出文件夹
-    if(program.verbose) console.log("开始生成实体类");
+    console.log("开始生成实体类");
     // 先去重
     let usedModels = [],
         datasource = [];
@@ -287,10 +341,6 @@ async function parseTemplate() {
         datasource.push(model);
     });
     datasource.forEach(async (model, index) => {
-        //         if(classCollect.filter(m=>m==model.className).length>1) {
-        //     if(exist_file.includes(model)) return;
-        //     exist_file.push(model);
-        // }
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
@@ -301,7 +351,7 @@ async function parseTemplate() {
     // ===================
     // gen http request (task) file
     // ===================
-    if(program.verbose) console.log("开始生成请求类");
+    console.log("开始生成请求类");
     let h_file      = getPath(out_task, `${modulename}.h`),
         m_file      = getPath(out_task, `${modulename}.m`);
     if(endpoints.length>methodArgs.length)
@@ -314,9 +364,10 @@ async function parseTemplate() {
         return {
         "httpclient": httpclient,
         "path": e,
+        "req_method": req_methods[i],
         "method": methods[i],
         "model": responseModel[i],
-        "des": methodTitles[i].replace(/\s/ig, ''),
+        "des": methodTitles[i].replace(/[\s\n]/ig, ''),
         "args": methodArgs[i]
     }
     });

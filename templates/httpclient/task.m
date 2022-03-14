@@ -8,20 +8,27 @@
 
 #import "${modulename}.h"
 ${endpoints.map(e=>`
-static NSString *const k${e.method.replace('task','')} = @"${e.path}.json"; // ${e.des}`).join('')}
+static NSString *const k${e.method} = @"${e.path}"; // ${e.des}`).join('')}
 
 @implementation ${modulename}
 
 ${endpoints.map(e=>
-`+ (WYTask *)${e.method}:(NSDictionary *)params success:(void (^)(${e.model} * _Nullable))success failure:(void (^)(NSError * _Nullable))failure {
-    WYTask *task = [[WYTask alloc] initWithURL:k${e.method.replace('task','')}];
-    task.needAutomaticLoadingView = NO;
-    [task startWithParams:params success:^(NSDictionary *response) {
-        success([${e.model} wy_modelWithDictionary:response]);
-    } failure:^(NSError *error) {
-        failure(error);
+`+ (void)${e.method}:(NSDictionary *)params success:(void (^)(${e.model} * _Nonull result))success failure:(void (^_Nonnull)(NSError * _Nonnull error))failure {
+    [LAToast showProgressStatus];
+    LCAfterRequest *request = [LCAfterRequest ${e.req_method.toLowerCase()}RequestWithApiPath:k${e.method} params:params];
+    
+    [request startRequestWithSuccess:^(id _Nonnull jsonObject) {
+        [LAToast hideProgressStatus];${[1].map(_=>{if(e.model.indexOf("NSArray") >= 0) return `
+    NSMutableArray *array = [NSMutableArray array];
+   [array addObjectsFromSafeArray:[${e.model} mj_objectArrayWithKeyValuesArray:jsonObject]];
+   SafeBlockRun(success, array);`;
+    else return `
+        SafeBlockRun(success, [${e.model} mj_objectWithKeyValues:jsonObject]);`
+;}).join('')}
+    } failure:^(NSError * _Nonnull error) {
+        [LAToast hideProgressStatus];
+        SafeBlockRun(failure,error);
     }];
-    return task;
 }`).join('').trim()}
 
 @end`
