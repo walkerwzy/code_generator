@@ -25,7 +25,7 @@ if(e.isArray) return `
        [array addObjectsFromSafeArray:[${e.model.type} mj_objectArrayWithKeyValuesArray:jsonObject]];
        SafeBlockRun(success, array);`;
 return `
-        SafeBlockRun(success, [${e.model} mj_objectWithKeyValues:jsonObject]);`
+        SafeBlockRun(success, [${e.model.type} mj_objectWithKeyValues:jsonObject]);`
 }).join('')}
     } failure:^(NSError * _Nonnull error) {
         [LAToast hideProgressStatus];
