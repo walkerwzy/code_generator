@@ -16,7 +16,7 @@ ${[0].map(_ => { if(model.hasIdKey) return `  // 模板字符串内不能直接�
 }).join('')}
 
 +(NSDictionary *)mj_objectClassInArray{
-    return @{${model.props.map(prop => { if(prop.isObject && prop.isArray) return `
+    return @{${model.props.map(prop => { if(prop.isObject) return `
 		@"${prop.name}": @"${prop.innerType}",`; else return '';
 }).join('')}
     };

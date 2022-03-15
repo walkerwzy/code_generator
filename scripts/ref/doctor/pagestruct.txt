@@ -1,0 +1,39 @@
+div.caseContainer
+	h2.interface-title --> section1，基本信息
+	div.panel-view
+		div.ant-row::first
+			div.colName --> 接口名称
+		div.ant-row::3rd
+			div.colValue
+				span.tag-method    --> 接口请求方式
+				span.colValue      --> 接口地址
+	h2.interface-title   --> section2, 请求参数
+	.ant-table-body > table > tbody
+		tr.ant-table-row
+			# 这里不同页面结构不一样，前两列基本一致
+			# 直接把后面所有的拼成字符串吧
+			td::1  -> 参数名称
+			td::2  -> 参数类型
+			td::3  -> 是否必须
+			td::4  -> 默认值
+			td::5  -> 示例
+			td::6  -> 备注
+	h2.interface-title   --> section3, 返回数据
+	div.ant-table-body > table > tbody
+		td::ant-table-row-level-1
+		td::ant-table-row-level-2
+			--> 名称，类型，必须，默认值，备注，其它
+
+pass:
+	code
+	message
+	errorArgs
+	success
+
+碰到的类型描述符：
+文本
+string
+string[]
+number
+object[]
+boolean

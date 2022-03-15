@@ -12,18 +12,19 @@ ${model.props.filter(m=>m.model).map(prop =>
 `).join('')}
 
 @interface ${model.className} : ${model.baseName}
+
 ${model.props.map(prop => {
-if(['NSInteger', 'CGFloat', 'BOOL'].includes(prop.type)) return `
+if(['NSInteger', 'CGFloat', 'BOOL'].includes(prop.type.trim())) return `
 /**
  * ${prop.des}
  */
-@property (nonatomic, assign) ${prop.type} ${prop.name};
+@property (nonatomic, assign) ${prop.type}${prop.name};
 `;
 else if(prop.type == 'NSString *') return `
 /**
  * ${prop.des}
  */
-@property (nonatomic, copy) ${prop.type} ${prop.name};
+@property (nonatomic, copy) ${prop.type}${prop.name};
 `;
 return `
 /**

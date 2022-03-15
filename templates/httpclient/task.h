@@ -6,10 +6,10 @@
 // 
 
 #import <Foundation/Foundation.h>
-#import <WYTask/WYTask.h>
-${endpoints.map(m=>
-`#import "${m.model}.h"
+${endpoints.filter(m=>m.model.type!="id").map(m=>
+`#import "${m.model.type}.h"
 `).join('')}
+NS_ASSUME_NONNULL_BEGIN
 
 @interface ${modulename} : ${httpclient}
 
@@ -17,10 +17,11 @@ ${
 endpoints.map(e=>`
 /**
  * ${e.des}
- 
 ${e.args.map(p=>
 ` * @param ${p}
 `).join('')} */
-+ (void)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nonnull)(${e.model} * _Nonnull result))success failure:(void (^ _Nonull)(NSError * _Nonull error))failure;`).join('').trim()}
++ (void)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nullable)(${e.model.param} result))success failure:(void (^ _Nullable)(NSError * _Nonull error))failure;`).join('').trim()}
 
-@end`
+@end
+
+NS_ASSUME_NONNULL_END`

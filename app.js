@@ -25,7 +25,7 @@ program
     .option('-f, --file <type>', 'set input file name','index.html')
     .option('-m, --module [name]', 'set the module name')
     .option('-b, --base [name]', 'set the base class names', collect, [])
-    .option('-B, --clientbase [name', 'set the httpclient base class', 'PMLRESTBase')
+    .option('-B, --clientbase [name', 'set the httpclient base class', 'NSObject')
     .option('-c, --classes [name]', 'set the class names', collect, [])
     .option('-C, --batchclasses [name,name,name]', 'batch sub class names', batchCollect, [])
     .option('-D, --batchdes [name]', 'set each root model a description', batchCollect, [])
@@ -33,13 +33,13 @@ program
     .option('-P, --batchpasskeys [key,key,key]', 'batch set exclued keys', batchCollect, [])
     .option('-a, --author [name]', 'set the author name', 'walker')
     .option('-j, --project [name]', 'set the project name', 'Project')
-    .option('-x, --prefix [name]', 'set the class prefix', 'WY')
-    .option('-r, --copyright [name]', 'set the copyright name', 'WeDoctor Group')
+    .option('-x, --prefix [name]', 'set the class prefix', 'LA')
+    .option('-r, --copyright [name]', 'set the copyright name', 'Lotus Technology')
     .option('-o, --tableoffset [count]', 'how many table need skiped to parse', 0)
     .option('--debug', 'the output.json file will gen', false)
     .option('--verbose', 'show buzz logs', false)
     .parse(process.argv);
-let baseClasses     = program.base.length || ['NSObject', 'NSObject'],// ['PMLResponseModelBaseHD', 'PMLModelBase'],
+let baseClasses     = program.base.length || ['NSObject', 'NSObject'],
     classCollect    = [...program.classes, ...program.batchclasses],
     passKeys        = [...program.passkeys, ...program.batchpasskeys],
     tableoffset     = program.tableoffset,
@@ -51,6 +51,8 @@ let entities        = [], // 实体类对应的数组
     req_methods     = [], // 接口请求方式数组(get, post...)
     responseModel   = [], // 接口返回值类型数组 => 完全由 endpoint 转化而来
     methods         = []; // 接口对应方法名数组 => 完全由 endpoint 转化而来 {name: param:}
+    isRespArray     = []; // 接口返回值是否对象数组（还没测简单数组）
+    isRespPrimary   = []; // 接口返回值是否基本类型
     methodTitles    = []; // 接口标题数组
     respFactory     = responseModelGenerator();
 
@@ -58,13 +60,13 @@ let entities        = [], // 实体类对应的数组
 let content         = await readFile(program.file),
     $               = cheerio.load(content);
 
-// 移除最后一个表格
-let table_count = 1; //$(".layui-tab-content .layui-table").length;
-// $(".layui-tab .layui-tab-content .layui-table").slice(table_count-1, table_count).remove();
+// 移除不需要的 table (目前只支持移除从0开始的)
+if(tableoffset>0) $(".ant-table-body > table").slice(0, tableoffset).remove();
+$(".caseContainer > .colHeader").remove();
 // 解析路径
-endpoints = [$(".panel-view .ant-row").eq(2).find(".colValue > .colValue").not(".tag-method").text()];//.replace(/^\w*/,'')];
+endpoints = [$(".panel-view .ant-row").eq(2).find(".colValue > .colValue").not(".tag-method").text()];
 // 解析method: get/post
-req_methods = [$(".panel-view .ant-row").eq(2).find(".tag-method").text()];//.replace(/^\w*/,'')];
+req_methods = [$(".panel-view .ant-row").eq(2).find(".tag-method").text()];
 // 根据路径生成方法名, 响应类名
 parseEndpoints();
 console.log('endpoints:', endpoints);
@@ -72,8 +74,6 @@ console.log('request_methods:', req_methods);
 console.log('response_types:', responseModel);
 // 解析文本, 得到方法标题列表
 methodTitles = [$('.panel-view .ant-row').first().find('.colName').text()];
-// 解析文本, 移除不需要的 table (目前只支持移除从0开始的)
-// if(tableoffset>0) $(".layui-tab .layui-tab-content .layui-tab-item .layui-table").slice(0, tableoffset).remove();
 console.log('titles:', methodTitles);
 // 解析请求和响应的 Table
 $(".ant-table-body > table").each((i, table) => {
@@ -87,23 +87,19 @@ await parseTemplate().catch(console.log);
 console.log("done!");
 
 /**
- * 生成：
- * [
- *  {
- *    "className": "LA****Model",
- *    "name": "uuid",
- *    "des": "订单ID"，
- *    "type": "NSString *",
- *    "isArray": false,
- *    "hasIdKey": false,
- *    "baseName": NSObject,  // 有的项目有继承别的根实体类，比如mantle
- *    "isRoot": ture  // 标识是不是返回对象里的子对象 -> 对应request的返回对象 弃用
- *    "level": 1  // 下面会用level==1来判断isRoot
- *  }
- * ]
- * 1, level-0在本项目中无需处理，所以直接硬编码从1开始
- *    要兼容的话，就把level-0的字段放到passKey的列表里也可以，有空再说
- * 2, 因为去掉了level-0，所以如果返的就是单值（直接返在data字段，暂未支持）
+ * 每行提取为如下json格式，然后再提取公共项
+ {
+    name: 'maintenanceNo',
+    des: '工单编号 非必须 ',
+    className: 'LAMaintenanceOrderSimpleList',
+    baseName: false,
+    type: 'NSString *',
+    innerType: 'NSString',
+    isArray: false,
+    isObject: false,
+    level: 1,
+    hasIdKey: false
+  },
  */
  function parseResponseTable(table, index) {
     let modelNames  = [responseModel[index]], // 按先后顺序出现的子类名（一旦一个子类处理完了，会从该表移除）
@@ -112,30 +108,38 @@ console.log("done!");
     $(table).find("tbody").children("tr")
     .each((i,tr) => {
         if($(tr).text().trim().length == 0) return; // 空行不处理
-        if($(tr).hasClass("ant-table-row-level-0") || $(tr).hasClass("ant-table-row-level-")) return;
         let tds = $(tr).children('td');
         let nameMatch = /[a-z0-9]+/ig.exec(tds.eq(0).text());
         if(!nameMatch) return;                                // 第一格非英文则理解为不是属性名
         if(passKeys.includes(nameMatch[0])) return;           // 包含预设排除关键字, 不需要处理
 
         let level = getRowLevel(tr);
-        // 比如：当前是1层，但是modelNames有两个，说明之前处理过子层，并且已经处理完了，那么就移除多余的名称
-        if(level < modelNames.length) modelNames.pop();
-        // 记录属性名, 类型, 注释等
         let pname = tds.eq(0).text().trim();
         let ptype = tds.eq(1).text().replace(/[\s\n]/g, '');
         if(!ptype || ptype.length == 0) 
             return console.log("当前行找不到类型定义, 请检查当前行数据: ",$(tr).html(), $(tr).text());
         let isArray = ['list', 'array'].includes(ptype.toLowerCase()) || ptype.indexOf('[]') >= 0;
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype); // 包含预设子类关键字, 理解为复杂对象
+        // level 0都不处理，只有data行需要判断一下是否只返了简单类型
+        if(level == 0 && pname == "data") {
+            // console.log(`row: ${i}, level: ${level}, name: ${pname}, type: ${ptype}`);
+            if(ptype == "boolean"){  // 目前文档唯一会返的root简单类型是boolean
+                responseModel[index] = "id";  // 项目特征
+            }
+            isRespArray.push(isArray);
+            isRespPrimary.push(!isComplexObj);
+            return;
+        }
+        // 比如：当前是1层，但是modelNames有两个，说明之前处理过子层，并且已经处理完了，那么就移除多余的名称
+        if(level < modelNames.length) modelNames.pop();
         if(isComplexObj) {
-            if(modelNames.length <= level) {
+            if(modelNames.length < level+1) {
                 ptype = typeFactory.next().value; 
                 modelNames.push(ptype);            // 也添加到子类表，子类按顺序从里面取名字
             }
             ptype = modelNames[level];
         }
-        // if(program.verbose) console.log(`row: ${i}, level: ${level}, name: ${pname}, isObject: ${isComplexObj}`, modelNames)
+        if(program.verbose) console.log(`row: ${i}, level: ${level}, name: ${pname}, isObject: ${isComplexObj}`, modelNames)
         if(isComplexObj) console.log(`${pname} ==> ${ptype}`);
         if(ptype == "object") 
             return console.log("object 行未发现对应的类:", $(tr).html(), $(tr).text(), tds.eq(4).html(), isComplexObj);
@@ -149,12 +153,11 @@ console.log("done!");
             "name": pname, 
             "des": pdes, 
             "className": modelNames[level-1],
-            "baseName": isComplexObj,
+            "baseName": baseName,
             "type": assume_type[0],
             "innerType": assume_type[1],
-            "isArray": isArray,
-            "isObject": isComplexObj,
             "level": level,
+            "isObject": isComplexObj,
             "hasIdKey": false,
         };
         if(pname == 'id') {
@@ -185,14 +188,13 @@ console.log("done!");
             if(ents.length == 0) return;
             let ent = ents[0];
             ent["isRoot"] = m["level"] == 1;
-            ent["hasIdKey"] = m["hasIdKey"],
+            ent["hasIdKey"] = props.filter(p=>p.className == m.className).some(p=>p.hasIdKey),
             ent["baseName"] = m["baseName"],
             ent["props"].push({
                 "name": m["name"],
                 "des": m["des"],
                 "type": m["type"],
                 "innerType": m["innerType"],
-                "isArray": m["isArray"],
                 "isObject": m["isObject"]
             })
         });
@@ -217,14 +219,14 @@ function capitalizeFirstLetter([first, ...rest]) {
 // 根据解析出路径, 响应类型, 和参数数组
 function parseEndpoints(){
     // 注意: 这里是针对具体 URL 的样式进行更改的, 不同项目请仔细更改
-    responseModel = endpoints.map(e=>program.prefix+capitalizeFirstLetter(e.substring(e.lastIndexOf('/')+1,e.length)));
+    responseModel = endpoints.map(e=>program.prefix+capitalizeFirstLetter(e.substring(e.lastIndexOf('/')+1,e.length))+'Model');
     methods = endpoints.map(e=>'request'+capitalizeFirstLetter(e.substring(e.lastIndexOf('/')+1,e.length)));
 }
 
 function getRowLevel(row) {
-    let level = 1;
+    let level = 0;
     [...1e4+''].forEach((_, i) => { // 4层够了吧？（从level1开始，到level4)
-        if($(row).hasClass("ant-table-row-level-" + (i+1))) level = i+1; // 顺便用来跟类名数组的个数做比较，所以从1开始计数
+        if($(row).hasClass("ant-table-row-level-"+i)) level = i; // 顺便用来跟类名数组的个数做比较，所以从1开始计数
     });
     return level;
 }
@@ -275,17 +277,15 @@ function assumeVarType(str, isArray, model) {
         model_type = str, // 类型 
         var_type = str;   // 字段
     if(['string','date', 'date-time'].includes(l_str)) model_type = "NSString *";
-    else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL";
-    else if(['int', 'integer', 'long', 'number'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger";
-    else if(['float', 'dobule'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat";
+    else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL ";
+    else if(['int', 'integer', 'long', 'number'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger ";
+    else if(['float', 'dobule'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat ";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSNumber *> *";
     else model_type = model + " *";
     var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
     model_type = model_type.replace(' *','');
-    if(str == 'ihospitalList') {
-        console.log(var_type, model_type)
-    }
+
     return [var_type, model_type];
 }
 
@@ -332,15 +332,18 @@ async function parseTemplate() {
     await fs.emptyDir(out_task); // 创建/清空输出文件夹
     console.log("开始生成实体类");
     // 先去重
-    let usedModels = [],
-        datasource = [];
-    entities.forEach((model, index) => {
-        if(classCollect.filter(m=>m==model.className).length==1) return datasource.push(model);
-        if(usedModels.includes(model.className)) return;
-        usedModels.push(model.className);
-        datasource.push(model);
-    });
-    datasource.forEach(async (model, index) => {
+    // let usedModels = [],
+    //     datasource = [];
+    // entities.forEach((model, index) => {
+    //     if(!model.isObject) return; // 简单类型不生成类
+    //     if(classCollect.filter(m=>m==model.className).length==1) return datasource.push(model);
+    //     if(usedModels.includes(model.className)) return;
+    //     usedModels.push(model.className);
+    //     datasource.push(model);
+    // });
+    // datasource = entities.filter((m, i) => !isRespPrimary[i]);
+    // datasource.forEach(async (model, index) => {
+    entities.forEach(async (model, index) => {
         let m_content = model.isRoot ? m_content2 : m_content1;
         // 输出路径
         let h_file = getPath(out_model, model.className+'.h'),
@@ -352,6 +355,13 @@ async function parseTemplate() {
     // gen http request (task) file
     // ===================
     console.log("开始生成请求类");
+    // 这里主要是为模板内写if写麻烦，越俎代疱在这里写上了生成值，前面的为NSString生成NSString *也是一样
+    let resp_model  = (i) => {
+        m = responseModel[i];  
+        if(m == "id") return {"type": m, "param": m};
+        if(isRespArray[i]) return {"type": m, "param": `NSArray<${m} *> * _Nonnull`};
+        return {"type": m, "param": m + " *  _Nonnull"};
+    };
     let h_file      = getPath(out_task, `${modulename}.h`),
         m_file      = getPath(out_task, `${modulename}.m`);
     if(endpoints.length>methodArgs.length)
@@ -362,15 +372,18 @@ async function parseTemplate() {
         console.log("警告: 接口数量比接口标题数量少", endpoints, methodTitles); // 这是合理的, 有的接口写在文档上并不需要做请求
     endpoints = endpoints.map((e,i)=>{
         return {
-        "httpclient": httpclient,
-        "path": e,
-        "req_method": req_methods[i],
-        "method": methods[i],
-        "model": responseModel[i],
-        "des": methodTitles[i].replace(/[\s\n]/ig, ''),
-        "args": methodArgs[i]
-    }
+            "httpclient": httpclient,
+            "path": e,
+            "req_method": req_methods[i],
+            "method": methods[i],
+            "model": resp_model(i),
+            "isPrimary": isRespPrimary[i],
+            "isArray": isRespArray[i],
+            "des": methodTitles[i].replace(/[\s\n]/ig, ''),
+            "args": methodArgs[i]
+        }   
     });
+    if(program.verbose) console.log("task file params:", endpoints);
     await renderFile(h_file, eval(h_task)).catch(console.log);
     await renderFile(m_file, eval(m_task)).catch(console.log);
 
