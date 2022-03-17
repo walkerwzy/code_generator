@@ -167,16 +167,6 @@ console.log("done!");
         props.push(prop);
        }); // end of basetable > tr > foreach
 
-        // 得到字典所有key的方法：Object.keys(dict)
-        // 得到字典所有key, value的方法： Object.entries(dict).map(([k,v],i) => k)
-        // 根据字段过滤：var filtered = Object.fromEntries(Object.entries(dict).filter(([k,v]) => v>1));
-        // 或者用assign和spread syntax:
-        // var filtered = Object.assign({}, ...
-        // Object.entries(dict).filter(([k,v]) => v>1).map(([k,v]) => ({[k]:v}))
-
-        // remove duplicates
-        // let chars = ['A', 'B', 'A', 'C', 'B'];
-        // let uniqueChars = [...new Set(chars)];
 
         if(program.verbose) console.log(props);
         // 提取公共字段
@@ -278,8 +268,8 @@ function assumeVarType(str, isArray, model) {
         var_type = str;   // 字段
     if(['string','date', 'date-time'].includes(l_str)) model_type = "NSString *";
     else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL ";
-    else if(['int', 'integer', 'long', 'number'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger ";
-    else if(['float', 'dobule'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat ";
+    else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger ";
+    else if(['float', 'dobule', 'number'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat ";
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSNumber *> *";
     else model_type = model + " *";
@@ -360,7 +350,7 @@ async function parseTemplate() {
         m = responseModel[i];  
         if(m == "id") return {"type": m, "param": m};
         if(isRespArray[i]) return {"type": m, "param": `NSArray<${m} *> * _Nonnull`};
-        return {"type": m, "param": m + " *  _Nonnull"};
+        return {"type": m, "param": m + " * _Nonnull"};
     };
     let h_file      = getPath(out_task, `${modulename}.h`),
         m_file      = getPath(out_task, `${modulename}.m`);

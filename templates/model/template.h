@@ -7,8 +7,8 @@
 
 
 #import <Foundation/Foundation.h>
-${model.props.filter(m=>m.model).map(prop =>
-`#import "${prop.model}.h"
+${model.props.filter(m=>m.isObject).map(prop =>
+`#import "${prop.innerType}.h"
 `).join('')}
 
 @interface ${model.className} : ${model.baseName}

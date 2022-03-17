@@ -20,7 +20,7 @@ endpoints.map(e=>`
 ${e.args.map(p=>
 ` * @param ${p}
 `).join('')} */
-+ (void)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nullable)(${e.model.param} result))success failure:(void (^ _Nullable)(NSError * _Nonull error))failure;`).join('').trim()}
+- (void)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nullable)(${e.model.param} result))success failure:(void (^ _Nullable)(NSError * _Nullable error))failure;`).join('').trim()}
 
 @end
 

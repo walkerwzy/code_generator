@@ -13,7 +13,7 @@ static NSString *const k${e.method} = @"${e.path}"; // ${e.des}`).join('')}
 @implementation ${modulename}
 
 ${endpoints.map(e=>
-`+ (void)${e.method}:(NSDictionary *)params success:(void (^)(${e.model.param} result))success failure:(void (^ _Nullable)(NSError *  _Nullable error))failure {
+`- (void)${e.method}:(NSDictionary *)params success:(void (^)(${e.model.param} result))success failure:(void (^ _Nullable)(NSError *  _Nullable error))failure {
     [LAToast showProgressStatus];
     LCAfterRequest *request = [LCAfterRequest ${e.req_method.toLowerCase()}RequestWithApiPath:k${e.method} params:params];
     [request startRequestWithSuccess:^(id _Nonnull jsonObject) {

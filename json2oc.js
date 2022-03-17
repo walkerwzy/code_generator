@@ -11,14 +11,26 @@ console.log("//========start========")
 parsejson(json);
 })().catch(console.log);
 
+// 打印字段说明
+// console.log([...document.getElementsByClassName("knife4j-debug-editor-field-description")].filter(m=>m.innerText.length>0).map(m=>m.innerText).join('\n'))
+
 function parsejson(json, isRecursive) {
-    for (let key in json) {
-        let tplstr = "`@property (nonatomic, ${hold}) ${type}${name};`",
-            hold = "copy",
-            type = "NSString *",
-            name = key,
-            value = json[key];
-        if(isRecursive) tplstr = "`// @property (nonatomic, ${hold}) ${type}${name};`";
+    // 我把key封装成了 字段说明_key, 所以进来的时候提取一下
+    // ${isRecursive?'':''} -> 当初是想用它给子级属性加//，目前删了
+    for (let wrap_key in json) {
+        let wrap_name = wrap_key.split('_'),
+            tplstr    = "`@property (nonatomic, ${hold}) ${type}${key=='id'?'theId':key};`",
+            key       = wrap_name[0],
+            des       = '';
+        if(wrap_name.length == 2) {
+            key  = wrap_name[1];
+            des  = wrap_name[0];
+            tplstr    = "`/**\n * ${des}\n*/\n@property (nonatomic, ${hold}) ${type}${key=='id'?'theId':key};`";
+        }
+        let hold  = "copy",
+            type  = "NSString *",
+            value = json[wrap_key];
+        // if(isRecursive) tplstr = "`// @property (nonatomic, ${hold}) ${type}${key};`";
         if(isInt(value)){
             hold = "assign";
             type = "NSInteger "
