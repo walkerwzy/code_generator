@@ -76,6 +76,7 @@ console.log('response_types:', responseModel);
 methodTitles = [$('.panel-view .ant-row').first().find('.colName').text()];
 console.log('titles:', methodTitles);
 // 解析请求和响应的 Table
+// console.log("---------------", $(".ant-table-body > table").length);
 $(".ant-table-body > table").each((i, table) => {
     if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
     parseResponseTable(table, Math.floor(i/2));  // => 得到实体类数组
@@ -121,13 +122,16 @@ console.log("done!");
         let isArray = ['list', 'array'].includes(ptype.toLowerCase()) || ptype.indexOf('[]') >= 0;
         let isComplexObj = isObjectOrArray(nameMatch[0], ptype); // 包含预设子类关键字, 理解为复杂对象
         // level 0都不处理，只有data行需要判断一下是否只返了简单类型
-        if(level == 0 && pname == "data") {
-            // console.log(`row: ${i}, level: ${level}, name: ${pname}, type: ${ptype}`);
-            if(ptype == "boolean"){  // 目前文档唯一会返的root简单类型是boolean
-                responseModel[index] = "id";  // 项目特征
+        let str_ptype = ptype;  //  先保留ptype原始文本
+        if(level == 0) {
+            if(pname == "data") {
+                // console.log(`row: ${i}, level: ${level}, name: ${pname}, type: ${ptype}`);
+                if(ptype == "boolean"){  // 目前文档唯一会返的root简单类型是boolean
+                    responseModel[index] = "id";  // 项目特征
+                }
+                isRespArray.push(isArray);
+                isRespPrimary.push(!isComplexObj);
             }
-            isRespArray.push(isArray);
-            isRespPrimary.push(!isComplexObj);
             return;
         }
         // 比如：当前是1层，但是modelNames有两个，说明之前处理过子层，并且已经处理完了，那么就移除多余的名称
@@ -147,7 +151,7 @@ console.log("done!");
             return console.log("类名个数不符", $(tr).text());  // 生成器没生成类名, 说明数量给少了
         if(ptype == 'list' || (ptype.indexOf('[]') >= 0  && isComplexObj)) 
             return console.log("没有找到该行 list 对应的类型, 请检查当前行数据:", $(tr).html(), tds.eq(2).text(), isComplexObj)
-        let assume_type = assumeVarType(ptype, isArray, ptype);
+        let assume_type = assumeVarType(str_ptype, isArray, ptype);
         let pdes = tds.eq(4).text().trim() + ' ' + tds.eq(2).text().trim() + ' ' + tds.eq(5).text().trim(); 
         let prop = {
             "name": pname, 
@@ -168,7 +172,7 @@ console.log("done!");
        }); // end of basetable > tr > foreach
 
 
-        if(program.verbose) console.log(props);
+        if(program.verbose) console.log("props:", props);
         // 提取公共字段
         // 先提取类别
         let types = [... new Set(props.map(m => m["className"]))];
@@ -266,7 +270,7 @@ function assumeVarType(str, isArray, model) {
     let l_str = str.toLowerCase(), 
         model_type = str, // 类型 
         var_type = str;   // 字段
-    if(['string','date', 'date-time'].includes(l_str)) model_type = "NSString *";
+    if(['string','date', 'date-time', 'null'].includes(l_str)) model_type = "NSString *";
     else if(['bool', 'boolean'].includes(l_str)) model_type = "BOOL ";
     else if(['int', 'integer', 'long'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "NSInteger ";
     else if(['float', 'dobule', 'number'].findIndex(v=>(new RegExp(v,'ig')).test(l_str)) >= 0) model_type = "CGFloat ";

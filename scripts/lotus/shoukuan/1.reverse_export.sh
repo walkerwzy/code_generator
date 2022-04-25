@@ -5,12 +5,12 @@ passkeys='code,errorArgs,success,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true
 verbose=true
-modulename='LARepairSettleViewModel'
+modulename='LAReverseSettleViewModel'
 prefix='LARS'
 skiptable=0
 models=(
-# 优惠模式定义
-'LAChargeTypeModel'
+# 工单结算列表
+# 'LASettleListItemModel'
 )
 
 for model in ${models[@]}; do
