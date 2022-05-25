@@ -15,21 +15,15 @@ ${model.props.filter(m=>m.isObject).map(prop =>
 
 ${model.props.map(prop => {
 if(['NSInteger', 'CGFloat', 'BOOL'].includes(prop.type.trim())) return `
-/**
- * ${prop.des}
- */
+/// ${prop.des}
 @property (nonatomic, assign) ${prop.type}${prop.name};
 `;
 else if(prop.type == 'NSString *') return `
-/**
- * ${prop.des}
- */
+/// ${prop.des}
 @property (nonatomic, copy) ${prop.type}${prop.name};
 `;
 return `
-/**
- * ${prop.des}
- */
+/// ${prop.des}
 @property (nonatomic, strong) ${prop.type}${prop.name};
 `;}).join('').trim()}
 

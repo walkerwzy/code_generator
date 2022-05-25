@@ -1,6 +1,6 @@
 #!/bin/bash
 author='walker'
-projectname='AfterSales'
+projectname='LARepairPDIModule'
 passkeys='code,errorArgs,success,message'
 fileuri='/Users/walker/Desktop/index.html'
 debug=true

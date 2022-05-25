@@ -63,4 +63,5 @@ output.json
 .DS_Store
 models/
 tasks/
+scripts/
 output_*
