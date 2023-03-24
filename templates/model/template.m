@@ -9,9 +9,9 @@
 
 @implementation ${model.className}
 
-${[0].map(_ => { if(model.hasIdKey) return `  // 模板字符串内不能直接写if，但map里可以写，所以包一下
+${[0].map(_ => { if(model.hasIdKey) return `
 +(NSDictionary*)mj_replacedKeyFromPropertyName{
-    return @{@"theId":@"id"};
+    return @{@"theId": @"id"};
 }`;
 }).join('')}
 

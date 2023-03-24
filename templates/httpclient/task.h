@@ -14,8 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ${modulename} : ${httpclient}
 
 ${
-endpoints.map(e=>`/// ${e.des}${e.args.map(p=>`
-/// @param ${p}`).join('')}
+endpoints.map(e=>`/// ${e.des}
+/// - Parameters:${e.args.map(p=>`
+///  - ${p}`).join('')}
 - (void)${e.method}:(NSDictionary *_Nullable)params success:(void (^ _Nullable)(${e.model.param} result))success failure:(void (^ _Nullable)(NSError * _Nullable error))failure;`).join('').trim()}
 
 @end

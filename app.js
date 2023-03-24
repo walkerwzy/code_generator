@@ -61,9 +61,9 @@ let content         = await readFile(program.file),
     $               = cheerio.load(content);
 
 // 移除不需要的 table (目前只支持移除从0开始的)
-console.log(88888, $(".ant-table-body > table").length);
+// console.log(88888, $(".ant-table-body > table").length);
 if(tableoffset>0) $(".ant-table-body > table").slice(0, tableoffset).remove();
-console.log(99999, $(".ant-table-body > table").length);
+// console.log(99999, $(".ant-table-body > table").length);
 $(".caseContainer > .colHeader").remove();
 // 解析路径
 endpoints = [$(".panel-view .ant-row").eq(2).find(".colValue > .colValue").not(".tag-method").text()];
@@ -80,7 +80,7 @@ console.log('titles:', methodTitles);
 // 解析请求和响应的 Table
 // console.log("---------------", $(".ant-table-body > table").length);
 $(".ant-table-body > table").each((i, table) => {
-    console.log(333333,i);
+    // console.log(333333,i);
     if(i%2 == 0) return parseRequestTable(table); // => 得到方法参数数组
     parseResponseTable(table, Math.floor(i/2));  // => 得到实体类数组
 });
@@ -280,7 +280,7 @@ function assumeVarType(str, isArray, model) {
     else if(l_str == strlist) model_type = "NSArray<NSString *> *"
     else if(l_str == intlist) model_type = "NSArray<NSNumber *> *";
     else model_type = model + " *";
-    var_type  = isArray ? "NSArray<"+model_type+"> *" : model_type;;
+    var_type  = (isArray && l_str != strlist && l_str != intlist) ? "NSArray<"+model_type+"> *" : model_type;;
     model_type = model_type.replace(' *','');
 
     return [var_type, model_type];

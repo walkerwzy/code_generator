@@ -25,7 +25,7 @@ function parsejson(json, isRecursive) {
         if(wrap_name.length == 2) {
             key  = wrap_name[1];
             des  = wrap_name[0];
-            tplstr    = "`/**\n * ${des}\n*/\n@property (nonatomic, ${hold}) ${type}${key=='id'?'theId':key};`";
+            tplstr    = "`/// ${des}\n@property (nonatomic, ${hold}) ${type}${key=='id'?'theId':key};`";
         }
         let hold  = "copy",
             type  = "NSString *",
@@ -33,7 +33,7 @@ function parsejson(json, isRecursive) {
         // if(isRecursive) tplstr = "`// @property (nonatomic, ${hold}) ${type}${key};`";
         if(isInt(value)){
             hold = "assign";
-            type = "NSInteger "
+            type = "CGFloat "  // 模拟数据源大多没有小数，所以干脆都cgfloat了
             console.log(eval(tplstr));
         }else if(isFloat(value)){
             hold = "assign";

@@ -10,8 +10,7 @@ prefix='LARS'
 skiptable=0
 models=(
 # 工单结算列表
-#
-mo'LASettleListItemModel'
+'LASettleListItemModel'
 )
 
 for model in ${models[@]}; do
