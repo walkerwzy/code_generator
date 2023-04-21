@@ -1,7 +1,217 @@
-	{
-			"标识页_bizPage": 0,
-			"选择类型(0: 完工; 1: 质检)_bizType": 0,
-			"选项编码_code": "",
-			"语言_lauguage": "",
-			"选项名称_name": ""
-		}
+{
+    "templateName": "EU-001",
+    "carSeriesList": [
+        "ALL"
+    ],
+    "coverCountryList": [
+        "ALL"
+    ],
+    "coverStoreList": [
+        "ALL"
+    ],
+    "separateCoverStore": 0,
+    "templateItemList": [
+        {
+            "itemCode": "SYSTEM_CHECK_000001",
+            "itemName": "系统检查",
+            "itemType": "SYSTEM_CHECK",
+            "itemDesc": "",
+            "itemSort": 1,
+            "containsSubItem": {
+                "contentCollections": [
+                    {
+                        "itemCode": "SYSTEM_CHECK_00002",
+                        "itemName": "行驶公里数",
+                        "itemDesc": "",
+                        "itemSort": 1,
+                        "itemAttributeConfigList": [
+                            {
+                                "configCode": "required_flag",
+                                "configValue": "1"
+                            },
+                            {
+                                "configCode": "input_type",
+                                "configValue": "1"
+                            },
+                            {
+                                "configCode": "max_value",
+                                "configValue": "99999999"
+                            },
+                            {
+                                "configCode": "min_value",
+                                "configValue": "0"
+                            }
+                        ]
+                    },
+                    {
+                        "itemCode": "SYSTEM_CHECK_00003",
+                        "itemName": "燃油量",
+                        "itemDesc": "",
+                        "itemSort": 2,
+                        "itemAttributeConfigList": [
+                            {
+                                "configCode": "required_flag",
+                                "configValue": "1"
+                            },
+                            {
+                                "configCode": "input_type",
+                                "configValue": "1"
+                            },
+                            {
+                                "configCode": "max_value",
+                                "configValue": "99999999"
+                            },
+                            {
+                                "configCode": "min_value",
+                                "configValue": "0"
+                            }
+                        ]
+                    }
+                ],
+                "itemCollections": [
+                	
+        {
+            "itemCode": "BRAKE_CHECK_000001",
+            "itemName": "刹车检查",
+            "itemDesc": "",
+            "itemType": "BRAKE_CHECK",
+            "itemSort": 5,
+            "containsSubItem": {
+                "contentCollections": [],
+                "itemCollections": [
+                    {
+                        "code": "BRAKE_PADS",
+                        "name": "刹车片",
+                        "itemList": [
+                            {
+                                "itemCode": "BRAKE_CHECK_000002",
+                                "itemName": "前刹车片",
+                                "itemDesc": "",
+                                "itemSort": 1,
+                                "itemAttributeConfigList": [
+                                    {
+                                        "configCode": "check_list_option_type",
+                                        "configValue": "qualified_option"
+                                    }
+                                ]
+                            },
+                            {
+                                "itemCode": "BRAKE_CHECK_000003",
+                                "itemName": "后刹车片",
+                                "itemDesc": "",
+                                "itemSort": 2,
+                                "itemAttributeConfigList": [
+                                    {
+                                        "configCode": "check_list_option_type",
+                                        "configValue": "qualified_option"
+                                    }
+                                ]
+                            }
+                        ],
+                        "indicators": [
+                            {
+                                "code": "new_thickness",
+                                "name": "新的厚度"
+                            },
+                            {
+                                "code": "distance_car_thickness",
+                                "name": "靠车厚度"
+                            },
+                            {
+                                "code": "breake_check_indicators",
+                                "name": "靠路厚度"
+                            },
+                            {
+                                "code": "available_thickness",
+                                "name": "可用厚度"
+                            },
+                            {
+                                "code": "replace_thickness",
+                                "name": "更换厚度"
+                            }
+                        ]
+                    },
+                    {
+                        "code": "BRAKES_GENERAL",
+                        "name": "刹车总成",
+                        "itemList": [
+                            {
+                                "itemCode": "BRAKE_CHECK_000004",
+                                "itemName": "前刹车盘",
+                                "itemDesc": "",
+                                "itemSort": 1,
+                                "itemAttributeConfigList": [
+                                    {
+                                        "configCode": "check_list_option_type",
+                                        "configValue": "qualified_option"
+                                    }
+                                ]
+                            },
+                            {
+                                "itemCode": "BRAKE_CHECK_000005",
+                                "itemName": "后刹车盘",
+                                "itemDesc": "",
+                                "itemSort": 2,
+                                "itemAttributeConfigList": [
+                                    {
+                                        "configCode": "check_list_option_type",
+                                        "configValue": "qualified_option"
+                                    }
+                                ]
+                            },
+                            {
+                                "itemCode": "BRAKE_CHECK_000006",
+                                "itemName": "驻车制动",
+                                "itemDesc": "",
+                                "itemSort": 3,
+                                "itemAttributeConfigList": [
+                                    {
+                                        "configCode": "check_list_option_type",
+                                        "configValue": "qualified_option"
+                                    }
+                                ]
+                            },
+                            {
+                                "itemCode": "BRAKE_CHECK_000007",
+                                "itemName": "制动液情况",
+                                "itemDesc": "",
+                                "itemSort": 4,
+                                "itemAttributeConfigList": [
+                                    {
+                                        "configCode": "check_list_option_type",
+                                        "configValue": "qualified_option"
+                                    }
+                                ]
+                            }
+                        ],
+                        "indicators": [
+                            {
+                                "code": "new_thickness",
+                                "name": "新的厚度"
+                            },
+                            {
+                                "code": "distance_car_thickness",
+                                "name": "靠车厚度"
+                            },
+                            {
+                                "code": "breake_check_indicators",
+                                "name": "靠路厚度"
+                            },
+                            {
+                                "code": "available_thickness",
+                                "name": "可用厚度"
+                            },
+                            {
+                                "code": "replace_thickness",
+                                "name": "更换厚度"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+                ]
+            }
+        }
+    ]
+}
